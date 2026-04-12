@@ -3,50 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رادار سيزار PRO V4.0</title>
+    <title>SEZAR-PHANTOM PRO V4.1</title>
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
-        body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 5px; }
+        
+        /* شاشة القفل */
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #050505; margin-top: 15vh; border-radius: 15px; width: 280px; }
         input { background: #111; border: 1px solid #444; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; outline: none; border-radius: 5px; }
         button { background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
-        #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
-        .header { border: 2px double var(--gold); padding: 15px; text-align: center; margin-bottom: 20px; }
-        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
-        .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-        .ice-title { font-size: 11px; color: var(--ghost); margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
-        .ice-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #111; font-size: 12px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; }
-        .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
-        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; width: 100%; }
+
+        /* واجهة الرادار - تصغير الهيدر */
+        #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 70px; }
+        .header { border: 2px solid var(--gold); padding: 8px; text-align: center; margin-bottom: 10px; border-radius: 5px; background: #000; }
+        .header h2 { margin: 0; font-size: 18px; color: var(--gold); letter-spacing: 2px; }
+        .header p { margin: 2px 0 0; font-size: 10px; color: #666; }
+
+        .price-box { border: 1px dashed #444; padding: 10px; text-align: center; font-size: 26px; font-weight: bold; margin-bottom: 5px; background: #080808; color: #00d2ff; }
+        .timer-text { text-align:center; font-size:9px; color:#444; margin-bottom:10px; }
+        
+        .ice-card { background: #000; border: 1px solid var(--ghost); padding: 12px; border-radius: 10px; margin-top: 15px; width: 100%; box-sizing: border-box; }
+        .ice-title { font-size: 10px; color: var(--ghost); margin-bottom: 8px; display: flex; justify-content: space-between; font-weight: bold; }
+        .ice-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #111; font-size: 11px; }
+
+        .row { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #111; font-size: 12px; }
+        .perc-tag { color: var(--gold); font-size: 9px; background: rgba(251, 191, 36, 0.1); padding: 1px 6px; border-radius: 8px; }
+        
+        #sig-box { text-align: center; font-weight: bold; padding: 12px; margin-top: 15px; border-radius: 5px; font-size: 15px; width: 100%; }
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
-        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
-        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; }
+
+        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 12px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
+        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 10px; border: 1px solid var(--gold); padding: 6px 14px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" class="lock-box">
-        <div style="color:var(--gold); font-weight:bold; margin-bottom:10px;">🔒 تفعيل رادار سيزار PRO</div>
+        <div style="color:var(--gold); font-weight:bold; margin-bottom:10px;">🔒 تفعيل SEZAR-PHANTOM</div>
         <input type="password" id="pass-key" placeholder="أدخل الكود">
         <button onclick="activate()">دخول</button>
     </div>
 
     <div id="radar-ui">
-        <div class="header"><h2>🔭 رادار سيزار</h2><p>[ BTCUSDT ]</p></div>
+        <div class="header"><h2>「 SEZAR-PHANTOM 」</h2><p>BTCUSDT ELITE RADAR</p></div>
+        
         <div class="price-box" id="coin-price">Loading...</div>
-        <div style="text-align:center; font-size:10px; color:#444; margin-bottom:15px;">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
-        <div id="buy-sell-per" style="text-align:center; font-weight:bold; margin-bottom:5px;">BUY: --% | SELL: --%</div>
-        <div id="power-bar" style="text-align:center; margin-bottom:20px; letter-spacing:3px;"></div>
+        <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
+        
+        <div id="buy-sell-per" style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:3px;">BUY: --% | SELL: --%</div>
+        <div id="power-bar" style="text-align:center; margin-bottom:15px; letter-spacing:2px; font-size:10px;"></div>
         
         <div id="s-walls"></div>
-        <div id="b-walls" style="margin-top:20px;"></div>
+        <div id="b-walls" style="margin-top:10px;"></div>
 
         <div class="ice-card">
-            <div class="ice-title"><span>ICEBERG DETECTOR (+20K)</span><span id="ice-status" style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">ACTIVE</span></div>
-            <div id="iceberg-list"><div style="text-align:center; padding:10px; color:#333; font-size:10px;">جاري رصد الحيتان...</div></div>
+            <div class="ice-title"><span>ICEBERG DETECTOR (+20K)</span><span id="ice-status" style="background:#064e3b; color:#22c55e; padding:1px 4px; border-radius:3px;">ACTIVE</span></div>
+            <div id="iceberg-list"></div>
         </div>
 
         <div id="sig-box">ANALYZING...</div>
@@ -66,13 +79,9 @@
             if (KEYS.includes(document.getElementById('pass-key').value)) {
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('radar-ui').style.display = 'block';
-                // تحديث السعر كل ثانية
                 setInterval(updatePrice, 1000);
-                // تحديث السيولة والجدران كل 30 ثانية (مثل كودك الأصلي)
                 setInterval(updateLiquidity, 30000);
-                // تحديث الأيسبرغ كل ثانية (سريع جداً)
-                setInterval(updateIcebergOnly, 1000);
-                // المؤقت
+                setInterval(updateIceberg, 1000);
                 setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
                 updateLiquidity();
             } else { alert("خطأ!"); }
@@ -99,20 +108,21 @@
                 const sig = document.getElementById('sig-box');
                 sig.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
                 sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
+
                 document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${(100-buyP).toFixed(1)}%`;
                 document.getElementById('power-bar').innerText = "🟢".repeat(Math.round(buyP/6.6)) + "🔴".repeat(15-Math.round(buyP/6.6));
 
                 let whaleAsks = [...asks].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom:1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
-                whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
+                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-size:10px; font-weight:bold;">🔴 SELL WALLS:</div>` + 
+                whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(1)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
 
                 let whaleBids = [...bids].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom:1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
-                whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-size:10px; font-weight:bold;">🟢 BUY WALLS:</div>` + 
+                whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(1)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             } catch (e) {}
         }
 
-        async function updateIcebergOnly() {
+        async function updateIceberg() {
             try {
                 const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${SYMBOL}&limit=5`);
                 const data = await res.json();
@@ -121,18 +131,15 @@
 
                 if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
                     let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]);
-                    let amount = d * bids[0][0];
-                    if (amount > 20000) found.push({p: bids[0][0], m: amount, t: 'Buyer'});
+                    let amt = d * bids[0][0]; if (amt > 20000) found.push({p: bids[0][0], m: amt, t: 'Buyer'});
                 }
                 if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
                     let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]);
-                    let amount = d * asks[0][0];
-                    if (amount > 20000) found.push({p: asks[0][0], m: amount, t: 'Seller'});
+                    let amt = d * asks[0][0]; if (amt > 20000) found.push({p: asks[0][0], m: amt, t: 'Seller'});
                 }
 
                 if(found.length > 0) {
                     const list = document.getElementById('iceberg-list');
-                    if(list.innerText.includes("جاري")) list.innerHTML = '';
                     found.forEach(ice => {
                         const row = document.createElement('div'); row.className = 'ice-row';
                         const mVal = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
