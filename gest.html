@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM PRO V5.0</title>
+    <title>SEZAR-PHANTOM PRO V5.1</title>
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #0a0a0a; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
         
-        /* واجهة القفل الملكية */
+        /* واجهة القفل */
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
         .lock-header { color: var(--gold); font-size: 14px; font-weight: bold; margin-bottom: 20px; direction: ltr; }
         .secure-note { color: #888; font-size: 11px; margin-bottom: 15px; line-height: 1.6; }
@@ -19,16 +19,15 @@
 
         /* شاشة البحث */
         #search-screen { display: none; width: 100%; max-width: 450px; text-align: center; margin-top: 20px; }
-        .sezar-style { color: var(--gold); letter-spacing: 2px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); font-size: 24px; margin-bottom: 25px; }
+        .sezar-style { color: var(--gold); letter-spacing: 2px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); font-size: 22px; margin-bottom: 25px; }
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px; width: 95%; border-radius: 15px; font-size: 16px; outline: none; text-align: center; margin-bottom: 30px; }
         #results-list { width: 100%; display: flex; flex-direction: column; gap: 12px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 15px; border-radius: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .coin-item:hover { border-color: var(--gold); }
-        .coin-info { display: flex; align-items: center; gap: 15px; flex-direction: row-reverse; }
         .coin-symbol { font-weight: bold; font-size: 16px; color: #fff; }
         .analyze-tag { color: var(--gold); font-size: 12px; font-weight: bold; }
 
-        /* واجهة الرادار الملكي */
+        /* واجهة الرادار */
         #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; position: relative; }
         .header h2 { margin: 0; font-size: 16px; color: var(--gold); letter-spacing: 2px; }
@@ -71,8 +70,8 @@
     </div>
 
     <div id="search-screen">
-        <h2 class="sezar-style">「 المطور سيزار 」</h2>
-        <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث عن عملة..." oninput="searchCoins()">
+        <h2 class="sezar-style">「 المطور SEZAR-PHANTOM 」</h2>
+        <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث عن عملة (Futures)..." oninput="searchCoins()">
         <div id="results-list"></div>
         <div class="contact-dev">
             <a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a>
@@ -82,7 +81,7 @@
 
     <div id="radar-ui">
         <div class="header">
-            <button class="back-btn" onclick="goBack()">🔙 بحث</button>
+            <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
             <h2>「 SEZAR-PHANTOM 」</h2>
             <p id="current-coin-name">[ BTCUSDT ]</p>
         </div>
@@ -113,12 +112,12 @@
         let pInt, lInt, iInt, tInt;
 
         function checkAuth() {
-            if (localStorage.getItem('sezar_auth_v5') === 'true') { showSearch(); }
+            if (localStorage.getItem('sezar_auth_v5_fut') === 'true') { showSearch(); }
         }
 
         function activate() {
             if (KEYS.includes(document.getElementById('pass-key').value)) {
-                localStorage.setItem('sezar_auth_v5', 'true');
+                localStorage.setItem('sezar_auth_v5_fut', 'true');
                 showSearch();
             } else { alert("الكود خطأ!"); }
         }
@@ -129,9 +128,10 @@
             document.getElementById('radar-ui').style.display = 'none';
             stopIntervals();
             if (allCoins.length === 0) {
-                const res = await fetch('https://api.binance.com/api/v3/exchangeInfo');
+                // محرك سحب بيانات العقود الآجلة (Futures)
+                const res = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
                 const data = await res.json();
-                allCoins = data.symbols.filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT'));
+                allCoins = data.symbols.filter(s => s.status === 'TRADING' && s.contractType === 'PERPETUAL');
             }
             searchCoins();
         }
@@ -166,7 +166,8 @@
 
         async function updatePrice() {
             try {
-                const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${currentSymbol}`);
+                // تحديث سعر العقود الآجلة
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${currentSymbol}`);
                 const data = await res.json();
                 let p = parseFloat(data.price);
                 document.getElementById('coin-price').innerText = '$' + p.toLocaleString(undefined, {minimumFractionDigits: p < 1 ? 5 : 2});
@@ -176,7 +177,8 @@
         async function updateLiquidity() {
             timeLeft = 30;
             try {
-                const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${currentSymbol}&limit=5000`);
+                // تحديث عمق سوق العقود الآجلة
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${currentSymbol}&limit=1000`);
                 const data = await res.json();
                 let bids = data.bids.map(b => ({p: parseFloat(b[0]), liq: parseFloat(b[0]) * parseFloat(b[1])}));
                 let asks = data.asks.map(a => ({p: parseFloat(a[0]), liq: parseFloat(a[0]) * parseFloat(a[1])}));
@@ -192,17 +194,17 @@
                 sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
 
                 let whaleAsks = [...asks].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom:1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
+                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
                 whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
                 let whaleBids = [...bids].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom:1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
+                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
                 whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             } catch (e) {}
         }
 
         async function updateIceberg() {
             try {
-                const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${currentSymbol}&limit=5`);
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${currentSymbol}&limit=5`);
                 const data = await res.json();
                 let bids = data.bids, asks = data.asks;
                 let found = [];
