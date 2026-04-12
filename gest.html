@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM PRO - WHALE ALERT</title>
+    <title>SEZAR-PHANTOM PRO - BOOKMAP VOICE</title>
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
@@ -41,20 +41,16 @@
         <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
         <div id="buy-sell-per">BUY: --% | SELL: --%</div>
         <div id="power-bar"></div>
-        
         <div id="s-walls"></div>
         <div id="b-walls" style="margin-top:20px;"></div>
-
         <div class="ice-card">
             <div style="font-size:11px; color:var(--ghost); display:flex; justify-content:space-between; font-weight:bold;">
-                <span>DETECTORS (ICE: 50K | WALL: 2M)</span>
-                <span id="audio-status" style="color:var(--gold); cursor:pointer;" onclick="toggleAudio()">🔊 صوت: مفعل</span>
+                <span>ICEBERG DETECTOR (+50K)</span>
+                <span id="audio-status" style="color:var(--gold); cursor:pointer;" onclick="toggleAudio()">🔊 نطق: مفعل</span>
             </div>
             <div id="iceberg-list"></div>
         </div>
-
         <div id="sig-box">ANALYZING...</div>
-        
         <div class="contact-dev"><a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a><a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a></div>
     </div>
 
@@ -63,19 +59,24 @@
         const SYMBOL = 'BTCUSDT';
         let lastBids = [], lastAsks = [], timeLeft = 30, audioEnabled = true;
 
-        // تنبيهات البوكماب
-        const icebergAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // تنبيه خفيف
-        const wallAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3'); // تنبيه ثقيل للجدران
+        // وظيفة النطق (مثل بوكماب)
+        function speak(text) {
+            if (!audioEnabled) return;
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'en-US';
+            msg.rate = 1.2; // سرعة النطق
+            msg.pitch = 1.0;
+            window.speechSynthesis.speak(msg);
+        }
 
         function checkAuth() { if (localStorage.getItem('sezar_auth') === 'true') { showRadar(); } }
         function activate() { if (KEYS.includes(document.getElementById('pass-key').value)) { localStorage.setItem('sezar_auth', 'true'); showRadar(); } else { alert("الكود خطأ!"); } }
-        function toggleAudio() { audioEnabled = !audioEnabled; document.getElementById('audio-status').innerText = audioEnabled ? "🔊 صوت: مفعل" : "🔇 صوت: صامت"; }
+        function toggleAudio() { audioEnabled = !audioEnabled; document.getElementById('audio-status').innerText = audioEnabled ? "🔊 نطق: مفعل" : "🔇 نطق: صامت"; }
 
         function showRadar() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('radar-ui').style.display = 'block';
-            setInterval(updatePrice, 1000);
-            setInterval(updateLiquidity, 30000);
+            setInterval(updatePrice, 1000); setInterval(updateLiquidity, 30000);
             setInterval(updateIceberg, 1000);
             setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
             updateLiquidity();
@@ -96,27 +97,18 @@
                 const data = await res.json();
                 let bids = data.bids.map(b => ({p: parseFloat(b[0]), liq: parseFloat(b[0]) * parseFloat(b[1])}));
                 let asks = data.asks.map(a => ({p: parseFloat(a[0]), liq: parseFloat(a[0]) * parseFloat(a[1])}));
-                
                 let tB = bids.reduce((s,b)=>s+b.liq,0), tS = asks.reduce((s,a)=>s+a.liq,0);
                 let buyP = (tB/(tB+tS)*100), sellP = 100 - buyP;
-
                 document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${sellP.toFixed(1)}%`;
-                let buyBalls = Math.round(buyP / 6.6), sellBalls = 15 - buyBalls;
+                let buyBalls = Math.round(buyP / 10), sellBalls = 10 - buyBalls;
                 document.getElementById('power-bar').innerHTML = '<div class="ball" style="background:var(--red)"></div>'.repeat(sellBalls) + '<div class="ball" style="background:var(--green)"></div>'.repeat(buyBalls);
 
-                // فحص دخول جدران +2 مليون
                 let bigWall = false;
                 let whaleAsks = [...asks].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                whaleAsks.forEach(a => { if(a.liq >= 2000000) bigWall = true; });
                 let whaleBids = [...bids].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                whaleBids.forEach(b => { if(b.liq >= 2000000) bigWall = true; });
 
-                if(bigWall && audioEnabled) { wallAudio.play(); } // تنبيه الجدار الثقيل
-
-                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
-                whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
-                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
-                whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
+                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             } catch (e) {}
         }
 
@@ -125,23 +117,21 @@
                 const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${SYMBOL}&limit=5`);
                 const data = await res.json();
                 let bids = data.bids, asks = data.asks;
-                let foundIce = false;
                 if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
                     let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]);
-                    if (d * bids[0][0] > 50000) { addIce(bids[0][0], d * bids[0][0], 'Buyer'); foundIce = true; }
+                    if (d * bids[0][0] > 50000) { addIce(bids[0][0], d * bids[0][0], 'Buyer'); speak("Buyer"); }
                 }
                 if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
                     let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]);
-                    if (d * asks[0][0] > 50000) { addIce(asks[0][0], d * asks[0][0], 'Seller'); foundIce = true; }
+                    if (d * asks[0][0] > 50000) { addIce(asks[0][0], d * asks[0][0], 'Seller'); speak("Seller"); }
                 }
-                if(foundIce && audioEnabled) { icebergAudio.play(); } // تنبيه الأيسبرغ
                 lastBids = bids; lastAsks = asks;
             } catch (e) {}
         }
 
         function addIce(p, m, t) {
             const list = document.getElementById('iceberg-list');
-            const row = document.createElement('div'); row.className = 'ice-row';
+            const row = document.createElement('div'); row.className = 'row';
             const mVal = m >= 1000000 ? (m/1000000).toFixed(2) + "M" : (m/1000).toFixed(1) + "K";
             row.innerHTML = `<span style="color:${t==='Buyer'?'var(--green)':'var(--red)'}">${t.toUpperCase()}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(p).toLocaleString()}</span>`;
             list.prepend(row); if (list.children.length > 5) list.removeChild(list.lastChild);
