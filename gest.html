@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM PRO - VOX</title>
+    <title>SEZAR-PHANTOM PRO - ORIGINAL FIX</title>
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        
+        /* واجهة الدخول الأصلية */
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
         input { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 95%; border-radius: 5px; font-size: 18px; outline: none; }
         button { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; }
+        
         #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; }
         .header h2 { margin: 0; font-size: 16px; color: var(--gold); letter-spacing: 2px; }
@@ -22,10 +25,11 @@
         .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
         .ice-title { font-size: 11px; color: var(--ghost); margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
         .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; }
-        .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
         #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; width: 100%; }
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
+        
+        /* أزرار التواصل الأصلية */
         .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
     </style>
@@ -54,7 +58,10 @@
             <div id="iceberg-list"></div>
         </div>
         <div id="sig-box">ANALYZING...</div>
-        <div class="contact-dev"><a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a><a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a></div>
+        <div class="contact-dev">
+            <a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a>
+            <a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a>
+        </div>
     </div>
 
     <script>
@@ -62,23 +69,20 @@
         const SYMBOL = 'BTCUSDT';
         let lastBids = [], lastAsks = [], timeLeft = 30, audioEnabled = true;
 
-        // نظام النطق المطور (Iceberg Buy / Iceberg Sell)
         function speak(text) {
             if (!audioEnabled) return;
             window.speechSynthesis.cancel(); 
             const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'en-US';
-            msg.rate = 1.3; // سرعة الـ Bookmap
-            msg.pitch = 0.9; // نبرة فخمة
+            msg.lang = 'en-US'; msg.rate = 1.3; msg.pitch = 0.9;
             window.speechSynthesis.speak(msg);
         }
 
-        function checkAuth() { if (localStorage.getItem('sezar_auth_vox') === 'true') { showRadar(); } }
+        function checkAuth() { if (localStorage.getItem('sezar_final_auth') === 'true') { showRadar(); } }
         
         function activate() {
             speak("System Online"); 
             if (KEYS.includes(document.getElementById('pass-key').value)) {
-                localStorage.setItem('sezar_auth_vox', 'true');
+                localStorage.setItem('sezar_final_auth', 'true');
                 showRadar();
             } else { alert("الكود خطأ!"); }
         }
@@ -86,7 +90,6 @@
         function toggleAudio() { 
             audioEnabled = !audioEnabled; 
             document.getElementById('audio-status').innerText = audioEnabled ? "🔊 نطق: مفعل" : "🔇 نطق: صامت";
-            if(audioEnabled) speak("Voice Activated");
         }
 
         function showRadar() {
@@ -121,9 +124,9 @@
                 sig.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
                 sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
                 let whaleAsks = [...asks].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
+                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span style="color:var(--gold); font-size:10px;">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
                 let whaleBids = [...bids].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span style="color:var(--gold); font-size:10px;">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             } catch (e) {}
         }
 
