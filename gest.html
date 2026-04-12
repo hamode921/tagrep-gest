@@ -23,11 +23,20 @@
 
         .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
         .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
+        
+        /* تنسيق توزيع الكرات تحت الكلمات */
+        .power-container { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 20px; padding: 0 10px; box-sizing: border-box; }
+        .side-box { display: flex; flex-direction: column; align-items: center; width: 45%; }
+        .side-label { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .balls-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+        .ball { width: 12px; height: 12px; border-radius: 50%; }
+
         .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
         .ice-title { font-size: 11px; color: var(--ghost); margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
         .ice-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #111; font-size: 12px; }
         .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; }
         .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
+        
         #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; width: 100%; }
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
@@ -41,7 +50,7 @@
         <div class="lock-header">🔒 تفعيل SEZAR-PHANTOM PRO</div>
         <div class="secure-note">هذا الكود يعمل على جهاز واحد فقط<br>ولا يعمل على غيره نهائياً</div>
         <input type="password" id="pass-key" placeholder="•••••">
-        <button onclick="activate()">تفعيل النظام الملكي</button>
+        <button onclick="activate()">تسجيل دخول</button>
         <div class="auth-links">
             <a href="https://t.me/se44se">✈️ تليجرام</a>
             <a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a>
@@ -52,8 +61,18 @@
         <div class="header"><h2>「 SEZAR-PHANTOM 」</h2><p>[ BTCUSDT ]</p></div>
         <div class="price-box" id="coin-price">Loading...</div>
         <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
-        <div id="buy-sell-per" style="text-align:center; font-weight:bold; margin-bottom:5px;">BUY: --% | SELL: --%</div>
-        <div id="power-bar" style="text-align:center; margin-bottom:20px; letter-spacing:3px;"></div>
+        
+        <div class="power-container">
+            <div class="side-box">
+                <div class="side-label" id="buy-label" style="color:var(--green)">BUY: --%</div>
+                <div class="balls-row" id="buy-balls"></div>
+            </div>
+            <div class="side-box">
+                <div class="side-label" id="sell-label" style="color:var(--red)">SELL: --%</div>
+                <div class="balls-row" id="sell-balls"></div>
+            </div>
+        </div>
+
         <div id="s-walls"></div>
         <div id="b-walls" style="margin-top:20px;"></div>
         <div class="ice-card"><div class="ice-title"><span>ICEBERG DETECTOR (+20K)</span><span id="ice-status" style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">ACTIVE</span></div><div id="iceberg-list"></div></div>
@@ -66,17 +85,13 @@
         const SYMBOL = 'BTCUSDT';
         let lastBids = [], lastAsks = [], timeLeft = 30;
 
-        // دالة فحص الدخول عند تحديث الصفحة
         function checkAuth() {
-            if (localStorage.getItem('sezar_auth') === 'true') {
-                showRadar();
-            }
+            if (localStorage.getItem('sezar_auth') === 'true') { showRadar(); }
         }
 
         function activate() {
-            const key = document.getElementById('pass-key').value;
-            if (KEYS.includes(key)) {
-                localStorage.setItem('sezar_auth', 'true'); // حفظ الدخول بالمتصفح
+            if (KEYS.includes(document.getElementById('pass-key').value)) {
+                localStorage.setItem('sezar_auth', 'true');
                 showRadar();
             } else { alert("الكود خطأ!"); }
         }
@@ -107,12 +122,20 @@
                 let bids = data.bids.map(b => ({p: parseFloat(b[0]), liq: parseFloat(b[0]) * parseFloat(b[1])}));
                 let asks = data.asks.map(a => ({p: parseFloat(a[0]), liq: parseFloat(a[0]) * parseFloat(a[1])}));
                 let tB = bids.reduce((s,b)=>s+b.liq,0), tS = asks.reduce((s,a)=>s+a.liq,0);
-                let buyP = (tB/(tB+tS)*100);
+                let buyP = (tB/(tB+tS)*100), sellP = 100 - buyP;
+
+                // تحديث الكرات تحت الكلمات
+                document.getElementById('buy-label').innerText = `BUY: ${buyP.toFixed(1)}%`;
+                document.getElementById('sell-label').innerText = `SELL: ${sellP.toFixed(1)}%`;
+                
+                let buyCount = Math.round(buyP / 10), sellCount = Math.round(sellP / 10);
+                document.getElementById('buy-balls').innerHTML = '<div class="ball" style="background:var(--green)"></div>'.repeat(buyCount);
+                document.getElementById('sell-balls').innerHTML = '<div class="ball" style="background:var(--red)"></div>'.repeat(sellCount);
+
                 const sig = document.getElementById('sig-box');
                 sig.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
                 sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
-                document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${(100-buyP).toFixed(1)}%`;
-                document.getElementById('power-bar').innerText = "🟢".repeat(Math.round(buyP/6.6)) + "🔴".repeat(15-Math.round(buyP/6.6));
+
                 let whaleAsks = [...asks].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
                 document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
                 whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
