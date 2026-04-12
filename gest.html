@@ -64,7 +64,7 @@
         <div id="s-walls"></div>
         <div id="b-walls" style="margin-top:20px;"></div>
         <div class="ice-card">
-            <div class="ice-title"><span>ICEBERG DETECTOR (+80K)</span><span id="ice-status" style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">FILTER ACTIVE</span></div>
+            <div class="ice-title"><span>ICEBERG DETECTOR (+50K)</span><span id="ice-status" style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">BOTS & WHALES</span></div>
             <div id="iceberg-list"></div>
         </div>
         <div id="sig-box">ANALYZING...</div>
@@ -144,19 +144,19 @@
                 if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
                     let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]);
                     let amt = d * bids[0][0]; 
-                    if (amt > 80000) found.push({p: bids[0][0], m: amt, t: 'Whale Buy'}); // تصفية 80K
+                    if (amt > 50000) found.push({p: bids[0][0], m: amt, t: 'Buyer'}); // فلتر +50K
                 }
                 if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
                     let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]);
                     let amt = d * asks[0][0]; 
-                    if (amt > 80000) found.push({p: asks[0][0], m: amt, t: 'Whale Sell'}); // تصفية 80K
+                    if (amt > 50000) found.push({p: asks[0][0], m: amt, t: 'Seller'}); // فلتر +50K
                 }
                 if(found.length > 0) {
                     const list = document.getElementById('iceberg-list');
                     found.forEach(ice => {
                         const row = document.createElement('div'); row.className = 'ice-row';
                         const mVal = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
-                        row.innerHTML = `<span style="color:${ice.t.includes('Buy')?'var(--green)':'var(--red)'}">${ice.t.toUpperCase()}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
+                        row.innerHTML = `<span style="color:${ice.t==='Buyer'?'var(--green)':'var(--red)'}">${ice.t.toUpperCase()}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
                         list.prepend(row); if (list.children.length > 5) list.removeChild(list.lastChild);
                     });
                 }
