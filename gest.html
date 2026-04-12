@@ -1,56 +1,125 @@
-// --- دالة رصد الأيسبرغ (رصد فقط بدون تغيير الإشارة) ---
-function analyzeIceberg(bids, asks) {
-    let found = [];
-    const threshold = 0.05; 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رادار سيزار PRO V3.1</title>
+    <style>
+        :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
+        body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; text-align: right; }
+        .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #050505; margin-top: 15vh; border-radius: 15px; width: 280px; }
+        input { background: #111; border: 1px solid #444; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; outline: none; border-radius: 5px; }
+        button { background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
+        #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
+        .header { border: 2px double var(--gold); padding: 15px; text-align: center; margin-bottom: 20px; }
+        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 28px; font-weight: bold; background: #0a0a0a; color: #00d2ff; }
+        .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; }
+        .ice-title { font-size: 11px; color: var(--ghost); margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+        .ice-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #111; font-size: 12px; }
+        .row { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid #111; font-size: 13px; }
+        .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
+        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; }
+        .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
+        .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
+        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
+        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; }
+        .ghost-alert { animation: sezarPulse 1.5s infinite; }
+        @keyframes sezarPulse { 0% { box-shadow: 0 0 0px var(--ghost); } 50% { box-shadow: 0 0 10px var(--ghost); } 100% { box-shadow: 0 0 0px var(--ghost); } }
+    </style>
+</head>
+<body>
 
-    if (lastBids.length > 0) {
-        if (parseFloat(bids[0][0]) === parseFloat(lastBids[0][0])) {
-            let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]);
-            if (d > threshold) found.push({p: bids[0][0], m: d * bids[0][0], t: 'Buyer'});
+    <div id="auth-screen" class="lock-box">
+        <div style="color:var(--gold); font-weight:bold; margin-bottom:10px;">🔒 قفل سيزار PRO V3.1</div>
+        <input type="password" id="pass-key" placeholder="أدخل كود التفعيل">
+        <button onclick="activate()">تفعيل</button>
+    </div>
+
+    <div id="radar-ui">
+        <div class="header"><h2>🔭 رادار سيزار</h2><p>BTCUSDT EDITION</p></div>
+        <div class="price-box" id="coin-price">Loading...</div>
+        <div id="buy-sell-per" style="text-align:center; margin-top:10px; font-weight:bold;">BUY: --% | SELL: --%</div>
+        <div id="power-bar" style="text-align:center; margin-bottom:20px; letter-spacing:3px;"></div>
+        <div id="s-walls"></div>
+        <div id="b-walls" style="margin-top:20px;"></div>
+        <div class="ice-card" id="iceberg-card">
+            <div class="ice-title"><span>ICEBERG DETECTOR</span><span id="ice-status" style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">SCANNING</span></div>
+            <div id="iceberg-list"></div>
+        </div>
+        <div id="sig-box">ANALYZING...</div>
+        <div class="contact-dev">
+            <a href="https://t.me/se44se">✈️ تليجرام</a>
+            <a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a>
+        </div>
+    </div>
+
+    <script>
+        const KEYS = ["SZ_01", "SZ_010", "SZ_040", "SZ_050", "SZ_08"];
+        const SYMBOL = 'BTCUSDT';
+        let lastBids = [], lastAsks = [];
+
+        function activate() {
+            if (KEYS.includes(document.getElementById('pass-key').value)) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('radar-ui').style.display = 'block';
+                setInterval(updateData, 2000);
+            } else { alert("الكود خطأ!"); }
         }
-        if (parseFloat(asks[0][0]) === parseFloat(lastAsks[0][0])) {
-            let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]);
-            if (d > threshold) found.push({p: asks[0][0], m: d * asks[0][0], t: 'Seller'});
+
+        async function updateData() {
+            try {
+                const pRes = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${SYMBOL}`);
+                const pData = await pRes.json();
+                document.getElementById('coin-price').innerText = '$' + parseFloat(pData.price).toLocaleString();
+
+                const dRes = await fetch(`https://api.binance.com/api/v3/depth?symbol=${SYMBOL}&limit=100`);
+                const data = await dRes.json();
+                
+                analyzeIceberg(data.bids, data.asks);
+                renderWalls(data.bids, data.asks);
+            } catch (e) {}
         }
-    }
-    
-    if (found.length > 0) {
-        updateIceList(found);
-        document.getElementById('iceberg-card').classList.add('ghost-alert');
-        document.getElementById('ice-status').innerText = "DETECTED";
-        document.getElementById('ice-status').style.background = "#450a0a";
-    } else {
-        document.getElementById('iceberg-card').classList.remove('ghost-alert');
-        document.getElementById('ice-status').innerText = "SCANNING";
-        document.getElementById('ice-status').style.background = "#064e3b";
-    }
-    lastBids = bids; lastAsks = asks;
-}
 
-// --- دالة الجدران (هي المسؤولة الوحيدة عن الـ SIGNAL) ---
-function renderWalls(bids, asks) {
-    let tB = bids.reduce((s,b)=>s+(parseFloat(b[0])*parseFloat(b[1])),0);
-    let tS = asks.reduce((s,a)=>s+(parseFloat(a[0])*parseFloat(a[1])),0);
-    let buyP = (tB/(tB+tS)*100);
-    
-    // تحديث الإشارة بناءً على سيولة الجدران فقط
-    const sig = document.getElementById('sig-box');
-    if (buyP > 50) {
-        sig.innerText = "🟢 SIGNAL: BULLISH";
-        sig.className = "sig-bullish";
-    } else {
-        sig.innerText = "🔴 SIGNAL: BEARISH";
-        sig.className = "sig-bearish";
-    }
+        function analyzeIceberg(bids, asks) {
+            let found = [];
+            if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
+                let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]);
+                if (d > 0.05) found.push({p: bids[0][0], m: d * bids[0][0], t: 'Buyer'});
+            }
+            if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
+                let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]);
+                if (d > 0.05) found.push({p: asks[0][0], m: d * asks[0][0], t: 'Seller'});
+            }
+            if(found.length > 0) updateIceList(found);
+            lastBids = bids; lastAsks = asks;
+        }
 
-    // تحديث الباور بار والنسب
-    document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${(100-buyP).toFixed(1)}%`;
-    document.getElementById('power-bar').innerText = "🟢".repeat(Math.round(buyP/6.6)) + "🔴".repeat(15-Math.round(buyP/6.6));
+        function updateIceList(arr) {
+            const list = document.getElementById('iceberg-list');
+            arr.forEach(ice => {
+                const row = document.createElement('div');
+                row.className = 'ice-row';
+                const mFormatted = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
+                row.innerHTML = `<span style="color:${ice.t==='Buyer'?'var(--green)':'var(--red)'}">${ice.t.toUpperCase()}</span><span style="color:var(--gold)">$${mFormatted}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
+                list.prepend(row);
+                if (list.children.length > 4) list.removeChild(list.lastChild);
+            });
+        }
 
-    // رسم الجدران
-    document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold;">🔴 SELL WALLS:</div>` + 
-    asks.slice(0,3).map(a => `<div class="row"><span>Vol: ${(a[0]*a[1]/1000000).toFixed(2)}M</span><span class="perc-tag">${(a[0]*a[1]/tS*100).toFixed(1)}%</span><span>$${parseFloat(a[0]).toLocaleString()}</span></div>`).join('');
-    
-    document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold;">🟢 BUY WALLS:</div>` + 
-    bids.slice(0,3).map(b => `<div class="row"><span>Vol: ${(b[0]*b[1]/1000000).toFixed(2)}M</span><span class="perc-tag">${(b[0]*b[1]/tB*100).toFixed(1)}%</span><span>$${parseFloat(b[0]).toLocaleString()}</span></div>`).join('');
-}
+        function renderWalls(bids, asks) {
+            let tB = bids.reduce((s,b)=>s+(b[0]*b[1]),0), tS = asks.reduce((s,a)=>s+(a[0]*a[1]),0);
+            let buyP = (tB/(tB+tS)*100);
+            const sig = document.getElementById('sig-box');
+            sig.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
+            sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
+            document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${(100-buyP).toFixed(1)}%`;
+            document.getElementById('power-bar').innerText = "🟢".repeat(Math.round(buyP/6.6)) + "🔴".repeat(15-Math.round(buyP/6.6));
+            
+            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold;">🔴 SELL WALLS:</div>` + 
+            asks.slice(0,3).map(a => `<div class="row"><span>Vol: ${(a[0]*a[1]/1000000).toFixed(2)}M</span><span class="perc-tag">${(a[0]*a[1]/tS*100).toFixed(1)}%</span><span>$${parseFloat(a[0]).toLocaleString()}</span></div>`).join('');
+            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold;">🟢 BUY WALLS:</div>` + 
+            bids.slice(0,3).map(b => `<div class="row"><span>Vol: ${(b[0]*b[1]/1000000).toFixed(2)}M</span><span class="perc-tag">${(b[0]*b[1]/tB*100).toFixed(1)}%</span><span>$${parseFloat(b[0]).toLocaleString()}</span></div>`).join('');
+        }
+    </script>
+</body>
+</html>
