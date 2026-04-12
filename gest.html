@@ -8,23 +8,24 @@
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
         
-        /* واجهة القفل مع تنبيه الحماية */
-        .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #050505; margin-top: 15vh; border-radius: 15px; width: 280px; }
-        input { background: #111; border: 1px solid #444; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; outline: none; border-radius: 5px; }
-        button { background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; margin-bottom: 20px; }
-        .secure-note { color: #ef4444; font-size: 10px; margin-bottom: 15px; font-weight: bold; }
+        /* واجهة القفل - مطابقة للصورة 100% */
+        .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
+        .lock-header { color: var(--gold); font-size: 14px; font-weight: bold; margin-bottom: 20px; direction: ltr; }
+        .secure-note { color: #888; font-size: 10px; margin-bottom: 10px; }
+        input { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 95%; outline: none; border-radius: 5px; font-size: 18px; }
+        button { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; margin-bottom: 20px; }
+        
+        /* روابط التواصل تحت القفل */
         .auth-links { display: flex; justify-content: space-around; width: 100%; border-top: 1px solid #222; padding-top: 15px; }
         .auth-links a { color: var(--gold); text-decoration: none; font-size: 10px; border: 1px solid var(--gold); padding: 5px 10px; border-radius: 4px; }
 
         #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
-        
-        /* تصغير حقل الاسم */
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; }
         .header h2 { margin: 0; font-size: 16px; color: var(--gold); letter-spacing: 2px; }
         .header p { margin: 0; font-size: 9px; color: #555; }
 
-        /* سعر البتكوين أبيض وواضح */
-        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 30px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        /* سعر البتكوين أبيض ناصع وواضح جداً */
+        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #ffffff !important; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
         
         .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
         .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
@@ -35,6 +36,7 @@
         #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; width: 100%; }
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
+
         .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; }
     </style>
@@ -42,9 +44,9 @@
 <body>
 
     <div id="auth-screen" class="lock-box">
-        <div style="color:var(--gold); font-weight:bold; margin-bottom:10px; font-size: 14px;">تفعيل SEZAR-PHANTOM PRO 🔒</div>
+        <div class="lock-header">🔒 تفعيل SEZAR-PHANTOM PRO</div>
         <div class="secure-note">⚠️ هذا الكود يستخدم لجهاز واحد فقط</div>
-        <input type="password" id="pass-key" placeholder="أدخل كود التفعيل">
+        <input type="password" id="pass-key" placeholder="•••••">
         <button onclick="activate()">دخول</button>
         <div class="auth-links">
             <a href="https://t.me/se44se">✈️ تليجرام</a>
@@ -106,10 +108,10 @@
                 document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${(100-buyP).toFixed(1)}%`;
                 document.getElementById('power-bar').innerText = "🟢".repeat(Math.round(buyP/6.6)) + "🔴".repeat(15-Math.round(buyP/6.6));
                 let whaleAsks = [...asks].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom:1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
+                document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
                 whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq/tS)*100).toFixed(2)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
                 let whaleBids = [...bids].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
-                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom:1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
+                document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
                 whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq/tB)*100).toFixed(2)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             } catch (e) {}
         }
