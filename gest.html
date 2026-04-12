@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM PRO V5.3</title>
+    <title>SEZAR-PHANTOM PRO V5.4</title>
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #0a0a0a; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
@@ -21,7 +21,18 @@
         #search-screen { display: none; width: 100%; max-width: 450px; text-align: center; margin-top: 20px; }
         .sezar-brand { margin-bottom: 30px; }
         .sezar-brand .top-text { color: var(--gold); font-size: 18px; letter-spacing: 4px; display: block; margin-bottom: 5px; }
-        .sezar-brand .sub-text { color: #fff; font-size: 26px; font-weight: bold; text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+        
+        /* تغيير لون الاسم للذهبي الفخم */
+        .sezar-brand .sub-text { 
+            background: linear-gradient(to bottom, #fff 20%, #fbbf24 50%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 28px; 
+            font-weight: bold; 
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+            letter-spacing: 1px;
+        }
+
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px; width: 95%; border-radius: 15px; font-size: 16px; outline: none; text-align: center; margin-bottom: 30px; }
         #results-list { width: 100%; display: flex; flex-direction: column; gap: 12px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 15px; border-radius: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -32,7 +43,18 @@
         /* واجهة الرادار الملكي */
         #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; position: relative; }
-        .header h2 { margin: 0; font-size: 16px; color: var(--gold); letter-spacing: 2px; }
+        
+        /* الاسم الذهبي داخل الرادار أيضاً */
+        .header h2 { 
+            margin: 0; 
+            font-size: 16px; 
+            background: linear-gradient(to bottom, #fff, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px; 
+            font-weight: bold;
+        }
+        
         .header p { margin: 0; font-size: 11px; color: #ffffff !important; font-weight: bold; }
         .back-btn { position: absolute; left: 8px; top: 8px; background: var(--gold); color: #000; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
 
@@ -117,12 +139,12 @@
         let pInt, lInt, iInt, tInt;
 
         function checkAuth() {
-            if (localStorage.getItem('sz_v5_3_final') === 'true') { showSearch(); }
+            if (localStorage.getItem('sz_v5_4_gold') === 'true') { showSearch(); }
         }
 
         function activate() {
             if (KEYS.includes(document.getElementById('pass-key').value)) {
-                localStorage.setItem('sz_v5_3_final', 'true');
+                localStorage.setItem('sz_v5_4_gold', 'true');
                 showSearch();
             } else { alert("الكود خطأ!"); }
         }
