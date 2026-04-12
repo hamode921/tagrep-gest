@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رادار سيزار PRO V3 - المطور سيزار</title>
+    <style>
+        /* الأساسيات من كود الرادار PRO الذهبي */
+        :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
+        body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; text-align: right; }
+        
+        /* شاشة القفل (Auth) من كود الرادار PRO */
+        .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #050505; margin-top: 15vh; border-radius: 15px; width: 280px; box-shadow: 0 0 20px rgba(251, 191, 36, 0.1); }
+        input { background: #111; border: 1px solid #444; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; outline: none; border-radius: 5px; }
+        button { background: var(--gold); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; }
+        
+        /* واجهة الرادارPRO الذهبية */
+        #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
+        .header { border: 2px double var(--gold); padding: 15px; text-align: center; margin-bottom: 20px; }
+        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
+        #buy-sell-per { text-align:center; font-size:14px; font-weight:bold; margin-bottom:5px; width: 100%; }
+        #power-bar { text-align:center; margin-bottom:20px; letter-spacing:3px; width: 100%; }
+        
+        /* تنسيق بيانات الجدران (Walls) */
+        .row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 10px 5px; border-bottom: 1px solid #111; }
+        .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; border: 0.5px solid rgba(251, 191, 36, 0.3); }
+
+        /* 🔥 جلب وتطوير حقل الايسبرغ من الرادار القديم */
+        .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; position: relative; overflow: hidden; }
+        .ice-title { font-size: 11px; color: var(--ghost); margin-bottom: 10px; display: flex; justify-content: space-between; text-transform: uppercase; font-weight: bold; }
+        .ice-header { display: flex; justify-content: space-between; color: #444; border-bottom: 1px solid #222; padding-bottom: 5px; margin-bottom: 5px; font-size: 11px;}
+        .ice-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #111; font-size: 12px; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* التنبيه البصري للأيسبرغ */
+        .ghost-alert { animation: sezarPulse 1.5s infinite; }
+        @keyframes sezarPulse { 0% { box-shadow: 0 0 0px var(--ghost); } 50% { box-shadow: 0 0 10px var(--ghost); } 100% { box-shadow: 0 0 0px var(--ghost); } }
+        
+        /* الإشارة الذكية الذهبية */
+        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; width: 100%; }
+        .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
+        .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
+        
+        /* روابط التواصل الذهبية */
+        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
+        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen" class="lock-box">
+        <div style="color:var(--gold); font-weight:bold; margin-bottom:10px;">🔒 قفـل البصمة الرقمية PRO V3</div>
+        <input type="password" id="pass-key" placeholder="أدخل كود التفعيل">
+        <button onclick="activate()">تفعيل المختبر</button>
+    </div>
+
+    <div id="radar-ui">
+        <div class="header"><h2>🔭 رادار سيزار PRO V3</h2><p>BTCUSDT ICEBERG EDITION</p></div>
+        <div class="price-box" id="coin-price">Loading...</div>
+        
+        <div style="font-size: 10px; color: #444; text-align:center; margin-bottom:20px;">تحديث السيولة اللحظية...</div>
+        
+        <div id="buy-sell-per">BUY: --% | SELL: --%</div>
+        <div id="power-bar"></div>
+        
+        <div id="s-walls"></div>
+        
+        <div id="b-walls" style="margin-top:20px;"></div>
+
+        <div class="ice-card" id="iceberg-card">
+            <div class="ice-title"><span>ICEBERG DETECTOR (GHOST HUNT)</span><span style="font-size:10px; padding:2px 6px; border-radius:5px; background:#064e3b; color:#22c55e;" id="ice-status">SCANNING</span></div>
+            <div class="ice-header"><span>النية</span><span>المبلغ ($)</span><span>السعر</span></div>
+            <div id="iceberg-list">
+                <div style="text-align:center; padding:15px; color:#333; font-size:11px;">بانتظار رصد الحيتان المخفية...</div>
+            </div>
+        </div>
+        
+        <div id="sig-box">ANALYZING MARKET...</div>
+        
+        <div class="contact-dev">
+            <a href="https://t.me/se44se">✈️ تليجرام</a>
+            <a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a>
+        </div>
+    </div>
+
+    <script>
+        const KEYS = ["SZ_01", "SZ_010", "SZ_040", "SZ_050", "SZ_08"];
+        const SYMBOL = 'BTCUSDT';
+        let currentSymbol = 'BTCUSDT';
+        let lastBids = [], lastAsks = [];
+
+        // نظام التفعيل الذهبي
+        function activate() {
+            if (KEYS.includes(document.getElementById('pass-key').value)) {
+                showRadar();
+            } else { alert("الكود خطأ!"); }
+        }
+
+        // تشغيل محركات الرادار PRO
+        function showRadar() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('radar-ui').style.display = 'block';
+            startAnalysis(); // تشغيل تحليل الأيسبرغ و السيولة
+            setInterval(updatePriceOnly, 1000); // تحديث السعر كل ثانية
+        }
+
+        // --- محرك تحليل الأيسبرغ والسيولة (GHOST HUNTER PRO V3) ---
+        function startAnalysis() {
+            document.getElementById('iceberg-list').innerHTML = '';
+            fetchData();
+            setInterval(fetchData, 2000); // تحديث كل ثانيتين بدقة الأيسبرغ
+        }
+
+        async function updatePriceOnly() {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${SYMBOL}`);
+                const data = await res.json();
+                document.getElementById('coin-price').innerText = '$' + parseFloat(data.price).toLocaleString();
+            } catch (e) {}
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${SYMBOL}&limit=100`);
+                const data = await res.json();
+                if(data.bids) analyze(data.bids, data.asks);
+            } catch (e) { }
+        }
+
+        function analyze(bids, asks) {
+            // 1. حساب السيولة والإشارة الذهبية
+            let bidsLiq = bids.map(b => ({p: parseFloat(b[0]), liq: parseFloat(b[0]) * parseFloat(b[1])}));
+            let asksLiq = asks.map(a => ({p: parseFloat(a[0]), liq: parseFloat(a[0]) * parseFloat(a[1])}));
+            let tB = bidsLiq.reduce((s,b)=>s+b.liq,0), tS = asksLiq.reduce((s,a)=>s+a.liq,0);
+            let buyP = (tB/(tB+tS)*100);
+
+            // عرض الجدران الذهبية (Sell Walls)
+            let whaleAsks = [...asksLiq].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => a.p - b.p);
+            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS (30s):</div>` + 
+            whaleAsks.map(a => `<div class="row"><span>Vol: ${(a.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((a.liq / tS) * 100).toFixed(1)}%</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
+
+            // عرض الجدران الذهبية (Buy Walls)
+            let whaleBids = [...bidsLiq].sort((a,b) => b.liq - a.liq).slice(0, 3).sort((a,b) => b.p - a.p);
+            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS (30s):</div>` + 
+            whaleBids.map(b => `<div class="row"><span>Vol: ${(b.liq/1000000).toFixed(2)}M</span><span class="perc-tag">${((b.liq / tB) * 100).toFixed(1)}%</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+
+            // عرض السيولة الذهبية
+            document.getElementById('buy-sell-per').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${(100-buyP).toFixed(1)}%`;
+            document.getElementById('power-bar').innerText = "🟢".repeat(Math.round(buyP/6.6)) + "🔴".repeat(15-Math.round(buyP/6.6));
+            const sig = document.getElementById('sig-box');
+            sig.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
+            sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
+
+            // 🔥 2. كشف الأيسبرغ المخفي (GHOST HUNTER V3 Logic) 🔥
+            let found = [];
+            const threshold = 0.05; // تقليل الحساسية لصيد الحيتان الكبيرة
+
+            if (lastBids.length > 0) {
+                // فحص تجميع المشتري الخفي
+                if (parseFloat(bids[0][0]) === parseFloat(lastBids[0][0])) {
+                    let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]);
+                    if (d > threshold) found.push({p: bids[0][0], m: d * bids[0][0], t: 'Buyer'});
+                }
+                // فحص تصريف البائع الخفي
+                if (parseFloat(asks[0][0]) === parseFloat(lastAsks[0][0])) {
+                    let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]);
+                    if (d > threshold) found.push({p: asks[0][0], m: d * asks[0][0], t: 'Seller'});
+                }
+            }
+            if (found.length > 0) {
+                updateIceList(found);
+                document.getElementById('iceberg-card').classList.add('ghost-alert');
+                document.getElementById('ice-status').innerText = "DETECTED";
+                document.getElementById('ice-status').style.background = "#450a0a";
+                document.getElementById('ice-status').style.color = "#ef4444";
+            } else {
+                document.getElementById('iceberg-card').classList.remove('ghost-alert');
+                document.getElementById('ice-status').innerText = "SCANNING";
+                document.getElementById('ice-status').style.background = "#064e3b";
+                document.getElementById('ice-status').style.color = "#22c55e";
+            }
+            lastBids = bids; lastAsks = asks;
+        }
+
+        // تحديث جدول الأيسبرغ البنفسجي بداخل الواجهة الذهبية
+        function updateIceList(arr) {
+            const list = document.getElementById('iceberg-list');
+            if(list.innerText.includes("بانتظار")) list.innerHTML = '';
+            arr.forEach(ice => {
+                const row = document.createElement('div');
+                row.className = 'ice-row';
+                const mFormatted = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
+                const sideColor = ice.t==='Buyer'?'var(--green)':'var(--red)';
+                row.innerHTML = `<span style="color:${sideColor}; font-weight:bold;">${ice.t.toUpperCase()}</span><span style="color:var(--gold); font-weight:bold;">$${mFormatted}</span><span style="color:#00e6ff">${parseFloat(ice.p).toLocaleString()}</span>`;
+                list.prepend(row);
+                if (list.children.length > 5) list.removeChild(list.lastChild);
+            });
+        }
+    </script>
+</body>
+</html>
