@@ -3,166 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM PRO ULTIMATE</title>
+    <title>SEZAR-PHANTOM | ALPHA LIVE RADAR</title>
     <style>
-        :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
-        body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        :root { --gold: #ffcc00; --bg: #000; --card: #080808; --cyan: #00d2ff; }
+        body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; padding: 15px; margin: 0; }
+        .header { border: 2px solid var(--gold); border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); }
+        .alpha-count { font-size: 12px; color: var(--gold); margin-top: 5px; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
         
-        .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
-        .secure-note { color: #888; font-size: 11px; margin-bottom: 15px; line-height: 1.6; }
-        input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 95%; outline: none; border-radius: 5px; font-size: 18px; }
-        button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; margin-bottom: 20px; }
-
-        #search-screen { display: none; width: 100%; max-width: 450px; text-align: center; margin-top: 20px; }
-        .sezar-brand { margin-bottom: 30px; }
-        .sezar-brand .sub-text { font-size: 28px; font-weight: bold; color: var(--gold); text-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
-        .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px; width: 95%; border-radius: 15px; font-size: 16px; outline: none; text-align: center; margin-bottom: 30px; }
-        .coin-item { background: #080808; border: 1px solid #222; padding: 15px; border-radius: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .coin-type { font-size: 9px; padding: 2px 5px; border-radius: 3px; margin-right: 5px; }
-
-        #radar-ui { display: none; width: 100%; max-width: 450px; padding-bottom: 80px; }
-        .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; position: relative; }
-        .back-btn { position: absolute; left: 8px; top: 8px; background: var(--gold); color: #000; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
-
-        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
-        .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
-        #buy-sell-per { text-align:center; font-weight:bold; margin-bottom:10px; font-size: 14px; }
-        #power-bar { text-align:center; margin-bottom:20px; display: flex; justify-content: center; gap: 4px; }
-        .ball { width: 12px; height: 12px; border-radius: 50%; }
-
-        .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; font-weight: bold; }
-        .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
-        .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
+        /* تصميم كارت الألفا */
+        .alpha-card { background: var(--card); border: 1px solid #1a1a1a; border-radius: 15px; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .alpha-card::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: var(--gold); }
         
-        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; }
-        .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
-        .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
+        .price-section { text-align: left; }
+        .p-main { font-size: 22px; font-weight: 900; color: var(--cyan); }
+        .p-change { font-size: 14px; font-weight: bold; }
+        .up { color: #22c55e; } .down { color: #ef4444; }
 
-        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
-        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
+        .info-section { text-align: right; }
+        .symbol-name { font-size: 20px; font-weight: bold; color: var(--gold); }
+        .tag { background: #332200; color: var(--gold); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--gold); }
+        .vol-text { font-size: 11px; color: #555; margin-top: 5px; }
+
+        .loading { color: var(--gold); text-align: center; margin-top: 50px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
-<body onload="checkAuth()">
+<body>
 
-    <div id="auth-screen" class="lock-box">
-        <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 تفعيل SEZAR-PHANTOM PRO</div>
-        <div class="secure-note">هذا الرمز يعمل على جهاز واحد فقط<br>ولا يعمل على جهاز غيره نهائياً</div>
-        <input type="password" id="pass-key" class="pass" placeholder="•••••">
-        <button onclick="activate()" class="login-btn">تسجيل دخول</button>
+    <div class="header">
+        <h1 style="margin:0; font-size: 26px;">「 SEZAR-PHANTOM ALPHA 」</h1>
+        <div class="alpha-count" id="count">SCANNING BINANCE SOURCE...</div>
     </div>
 
-    <div id="search-screen">
-        <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
-        <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث (Spot & Futures)..." oninput="searchCoins()">
-        <div id="results-list"></div>
-    </div>
-
-    <div id="radar-ui">
-        <div class="header">
-            <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
-            <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
-            <p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p>
-        </div>
-        <div class="price-box" id="coin-price">Loading...</div>
-        <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
-        <div id="buy-sell-per">BUY: --% | SELL: --%</div>
-        <div id="power-bar"></div>
-        <div id="s-walls"></div>
-        <div id="b-walls" style="margin-top:20px;"></div>
-        <div class="ice-card"><div id="iceberg-list"></div></div>
-        <div id="sig-box">ANALYZING...</div>
+    <div id="alpha-list" class="grid">
+        <div class="loading">... جاري اختراق سيرفرات الألفا وقنص العملات الحية</div>
     </div>
 
     <script>
-        const KEYS = ["SZ_01", "SZ_010", "SZ_040", "SZ_050", "SZ_08"];
-        let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, pInt, lInt, iInt, tInt;
+        // الرادار الذكي يشبك على "المصدر العام" لبايننس
+        async function scanBinanceAlpha() {
+            try {
+                // سحب بيانات كل أزواج التداول اللحظية
+                const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+                const marketData = await response.json();
 
-        function checkAuth() { if (localStorage.getItem('sz_ultimate_v1') === 'true') { showSearch(); } }
-        function activate() { if (KEYS.includes(document.getElementById('pass-key').value)) { localStorage.setItem('sz_ultimate_v1', 'true'); showSearch(); } else { alert("الكود خطأ!"); } }
-        
-        async function showSearch() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('search-screen').style.display = 'block';
-            document.getElementById('radar-ui').style.display = 'none';
-            stopIntervals();
-            if (allCoins.length === 0) {
-                // إضافة رابط سيرفر الألفا (ticker/24hr) لجلب كافة العملات
-                const [spotRes, futRes, alphaRes] = await Promise.all([
-                    fetch('https://api.binance.com/api/v3/exchangeInfo'),
-                    fetch('https://fapi.binance.com/fapi/v1/exchangeInfo'),
-                    fetch('https://api.binance.com/api/v3/ticker/24hr')
-                ]);
-                const spotData = await spotRes.json();
+                // سحب قائمة الفيوتشرز لاستبعادها (حتى يصفى لنا فقط الألفا/سبوت الجديد)
+                const futRes = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
                 const futData = await futRes.json();
-                const alphaData = await alphaRes.json();
-                
-                let spotList = spotData.symbols.filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT')).map(s => ({s: s.symbol, m: 'spot'}));
-                let futList = futData.symbols.filter(s => s.status === 'TRADING').map(s => ({s: s.symbol, m: 'futures'}));
-                
-                // فلترة عملات الألفا من السيرفر العام
-                let alphaList = alphaData.filter(a => a.symbol.endsWith('USDT') && !spotList.find(s => s.s === a.symbol)).map(a => ({s: a.symbol, m: 'alpha'}));
-                
-                allCoins = [...spotList, ...futList, ...alphaList];
+                const futSymbols = new Set(futData.symbols.map(s => s.symbol));
+
+                // فلترة السورس: (USDT فقط) + (ليست فيوتشرز) + (حجم تداول نشط)
+                // هذا الفلتر يلقط أي عملة جديدة تنزل بالـ Alpha Hub تلقائياً
+                const alphaSource = marketData.filter(coin => {
+                    return coin.symbol.endsWith('USDT') && 
+                           !futSymbols.has(coin.symbol) && 
+                           parseFloat(coin.quoteVolume) > 500000; // قنص العملات اللي سيولتها فوق نص مليون
+                });
+
+                // ترتيب العملات حسب الانفجار السعري
+                alphaSource.sort((a, b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent));
+
+                const listCont = document.getElementById('alpha-list');
+                const countCont = document.getElementById('count');
+                listCont.innerHTML = '';
+                countCont.innerText = `LIVE: ${alphaSource.length} ALPHA COINS DETECTED`;
+
+                alphaSource.forEach(c => {
+                    const change = parseFloat(c.priceChangePercent);
+                    const changeClass = change >= 0 ? 'up' : 'down';
+                    
+                    listCont.innerHTML += `
+                        <div class="alpha-card">
+                            <div class="price-section">
+                                <div class="p-change ${changeClass}">${change >= 0 ? '▲' : '▼'} ${change}%</div>
+                                <div class="p-main">$${parseFloat(c.lastPrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div class="info-section">
+                                <span class="tag">LIVE ALPHA</span>
+                                <div class="symbol-name">${c.symbol.replace('USDT', '')}<span style="font-size:12px; color:#444;">/USDT</span></div>
+                                <div class="vol-text">24h Vol: ${(parseFloat(c.quoteVolume)/1000000).toFixed(2)}M</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error("Alpha Server Error");
             }
-            searchCoins();
         }
 
-        function searchCoins() {
-            const q = document.getElementById('search-input').value.toUpperCase();
-            const list = document.getElementById('results-list');
-            list.innerHTML = '';
-            const filtered = allCoins.filter(c => c.s.includes(q)).slice(0, 15);
-            filtered.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'coin-item';
-                div.innerHTML = `<span><span style="background:var(--gold); color:#000; font-size:9px; padding:2px 5px; border-radius:3px; font-weight:bold;">${c.m.toUpperCase()}</span> ${c.s}</span><span>🔭 تحليل</span>`;
-                div.onclick = () => startRadar(c.s, c.m);
-                list.appendChild(div);
-            });
-        }
-
-        function startRadar(s, m) {
-            currentSymbol = s; currentMode = m;
-            document.getElementById('search-screen').style.display = 'none';
-            document.getElementById('radar-ui').style.display = 'block';
-            document.getElementById('current-coin-name').innerText = `[ ${s} ]`;
-            fetchPrice(); pInt = setInterval(fetchPrice, 2000);
-            fetchLiquidity(); lInt = setInterval(fetchLiquidity, 30000);
-            fetchTrades(); iInt = setInterval(fetchTrades, 3000);
-            startTimer();
-        }
-
-        function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); }
-        function goBack() { showSearch(); }
-        function startTimer() { timeLeft = 30; tInt = setInterval(() => { timeLeft--; document.getElementById('timer').innerText = timeLeft; if(timeLeft <= 0) timeLeft = 30; }, 1000); }
-
-        async function fetchPrice() {
-            const url = (currentMode === 'futures') ? `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${currentSymbol}` : `https://api.binance.com/api/v3/ticker/price?symbol=${currentSymbol}`;
-            const res = await fetch(url); const data = await res.json();
-            document.getElementById('coin-price').innerText = `$${parseFloat(data.price).toLocaleString()}`;
-        }
-
-        async function fetchLiquidity() {
-            const url = (currentMode === 'futures') ? `https://fapi.binance.com/fapi/v1/depth?symbol=${currentSymbol}&limit=20` : `https://api.binance.com/api/v3/depth?symbol=${currentSymbol}&limit=20`;
-            const res = await fetch(url); const data = await res.json();
-            let tb = 0, ts = 0;
-            data.bids.forEach(b => tb += (b[0] * b[1]));
-            data.asks.forEach(a => ts += (a[0] * a[1]));
-            let bP = (tb / (tb + ts) * 100).toFixed(1);
-            let sP = (100 - bP).toFixed(1);
-            document.getElementById('buy-sell-per').innerHTML = `<span style="color:var(--green);">BUY: ${bP}%</span> | <span style="color:var(--red);">SELL: ${sP}%</span>`;
-            let bar = ''; for(let i=0; i<10; i++) bar += `<div class="ball" style="background:${i < bP/10 ? 'var(--green)' : 'var(--red)'};"></div>`;
-            document.getElementById('power-bar').innerHTML = bar;
-            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-size:12px; font-weight:bold;">SELL WALLS 🔴</div>` + data.asks.slice(0, 4).map(w => `<div class="row"><span>$${parseFloat(w[0]).toLocaleString()}</span><span class="perc-tag">${(Math.random()*5+1).toFixed(1)}%</span><span>Vol: ${(w[0]*w[1]/1000000).toFixed(2)}M</span></div>`).join('');
-            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-size:12px; font-weight:bold;">BUY WALLS 🟢</div>` + data.bids.slice(0, 4).map(w => `<div class="row"><span>$${parseFloat(w[0]).toLocaleString()}</span><span class="perc-tag">${(Math.random()*5+1).toFixed(1)}%</span><span>Vol: ${(w[0]*w[1]/1000000).toFixed(2)}M</span></div>`).join('');
-        }
-
-        async function fetchTrades() {
-            const url = (currentMode === 'futures') ? `https://fapi.binance.com/fapi/v1/aggTrades?symbol=${currentSymbol}&limit=5` : `https://api.binance.com/api/v3/aggTrades?symbol=${currentSymbol}&limit=5`;
-            const res = await fetch(url); const trades = await res.json();
-            const log = document.getElementById('iceberg-list'); log.innerHTML = '';
-            trades.forEach(t => { const val = t.p * t.q; if(val > 20000) { const row = document.createElement('div'); row.className = 'row'; row.innerHTML = `<span>$${(val/1000).toFixed(1)}K</span><span style="color:${t.m ? 'var(--red)' : 'var(--green)'};">${t.m ? 'SELL' : 'BUY'}</span>`; log.appendChild(row); } });
-        }
+        // تحديث الرادار كل 3 ثواني (قناص حقيقي)
+        setInterval(scanBinanceAlpha, 3000);
+        scanBinanceAlpha();
     </script>
 </body>
 </html>
