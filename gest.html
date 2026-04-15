@@ -3,138 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM | BINANCE RADAR</title>
+    <title>SEZAR-PHANTOM v3.0</title>
     <style>
-        :root { --gold: #ffcc00; --cyan: #00d4ff; --bg: #000; --red: #ff4d4d; --green: #00ff00; }
-        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; text-align: center; }
-        
-        .header { border: 2px solid var(--gold); padding: 10px; margin-bottom: 20px; border-radius: 10px; }
-        .symbol-name { font-size: 20px; color: var(--gold); letter-spacing: 2px; }
-        
-        /* خانة البحث مدمجة بدون تشويه التصميم */
-        .alpha-search { margin: 10px auto; width: 90%; display: flex; gap: 5px; }
-        .alpha-search input { flex: 3; background: #111; border: 1px solid #333; color: white; padding: 8px; border-radius: 5px; }
-        .alpha-search button { flex: 1; background: var(--gold); color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-
-        .price-display { font-size: 55px; font-weight: bold; color: var(--cyan); margin: 15px 0; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
-        
-        .liquidity-bar-container { margin: 20px auto; width: 90%; }
-        .liquidity-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
-        .bar-bg { background: #333; height: 12px; border-radius: 6px; display: flex; overflow: hidden; }
-        .buy-bar { background: var(--green); height: 100%; transition: width 0.5s ease; }
-        .sell-bar { background: var(--red); height: 100%; transition: width 0.5s ease; }
-
-        .walls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .wall-box { border: 1px solid #222; border-radius: 8px; padding: 10px; background: #0a0a0a; }
-        .wall-item { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; border-bottom: 1px solid #1a1a1a; padding-bottom: 3px; }
-        
-        .iceberg-section { margin-top: 20px; border: 2px solid #8e44ad; border-radius: 15px; padding: 15px; background: rgba(142, 68, 173, 0.05); }
-        .log-entry { display: flex; justify-content: space-between; font-size: 14px; padding: 5px 0; border-bottom: 1px solid #222; }
-
-        .buyer { color: var(--green); font-weight: bold; }
-        .seller { color: var(--red); font-weight: bold; }
+        body { background-color: black; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .header-box { border: 2px solid #FFCC00; border-radius: 15px; padding: 20px; margin: 10px; }
+        .title { color: #FFCC00; font-size: 28px; font-weight: bold; margin: 0; }
+        .subtitle { color: #00D4FF; font-size: 22px; margin-top: 10px; }
+        .search-container { display: flex; justify-content: center; gap: 10px; margin: 20px 10px; }
+        input { background: #1A1A1A; border: 1px solid #333; color: white; padding: 15px; border-radius: 10px; flex: 1; font-size: 16px; }
+        button { background: #FFCC00; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .price { color: #00D4FF; font-size: 60px; font-weight: bold; margin: 20px 0; }
+        .stats { display: flex; justify-content: space-between; padding: 0 20px; font-weight: bold; }
+        .buy-text { color: #00FF00; } .sell-text { color: #FF4D4D; }
+        .bar-container { background: #333; height: 15px; border-radius: 10px; margin: 10px 20px; display: flex; overflow: hidden; }
+        .buy-bar { background: #00FF00; height: 100%; transition: 0.5s; }
+        .sell-bar { background: #FF4D4D; height: 100%; transition: 0.5s; }
+        .walls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px; }
+        .wall-card { background: #0A0A0A; border: 1px solid #222; border-radius: 15px; padding: 15px; }
+        .wall-title { font-weight: bold; margin-bottom: 10px; font-size: 18px; }
+        .wall-row { display: flex; justify-content: space-between; font-size: 14px; margin: 5px 0; border-bottom: 1px solid #111; }
+        .iceberg-card { border: 1px solid #A29BFE; border-radius: 15px; padding: 15px; margin: 20px; background: #050505; }
+        .iceberg-title { color: #A29BFE; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div style="font-size: 24px; font-weight: bold; color: var(--gold);">「 SEZAR-PHANTOM 」</div>
-        <div class="symbol-name" id="symDisplay">[ BTCUSDT ]</div>
+    <div class="header-box">
+        <p class="title">「 SEZAR-PHANTOM 」</p>
+        <p class="subtitle" id="symText">[ BTCUSDT ]</p>
     </div>
 
-    <div class="alpha-search">
-        <input type="text" id="alphaInput" placeholder="Alpha Symbol (e.g. PEPE)">
-        <button onclick="hunt()">قنص</button>
+    <div class="search-container">
+        <input type="text" id="coinIn" placeholder="Alpha Symbol (e.g. PEPE)">
+        <button onclick="qanas()">قنص</button>
     </div>
 
-    <div class="price-display" id="mainPrice">0.00</div>
+    <div class="price" id="price">0.00</div>
 
-    <div class="liquidity-bar-container">
-        <div class="liquidity-info">
-            <span class="buyer">BUY: <span id="buyPercent">50</span>%</span>
-            <span class="seller">SELL: <span id="sellPercent">50</span>%</span>
-        </div>
-        <div class="bar-bg">
-            <div id="buyBar" class="buy-bar" style="width: 50%;"></div>
-            <div id="sellBar" class="sell-bar" style="width: 50%;"></div>
-        </div>
+    <div class="stats">
+        <span class="buy-text">BUY: <span id="bP">50</span>%</span>
+        <span class="sell-text">SELL: <span id="sP">50</span>%</span>
+    </div>
+    <div class="bar-container">
+        <div id="bBar" class="buy-bar" style="width: 50%;"></div>
+        <div id="sBar" class="sell-bar" style="width: 50%;"></div>
     </div>
 
     <div class="walls-grid">
-        <div class="wall-box">
-            <div class="seller" style="margin-bottom: 10px;">:SELL WALLS (FUTURES) 🔴</div>
-            <div id="sellWallsList"></div>
+        <div class="wall-card">
+            <div class="sell-text wall-title">:SELL WALLS<br>(FUTURES) 🔴</div>
+            <div id="sList"></div>
         </div>
-        <div class="wall-box">
-            <div class="buyer" style="margin-bottom: 10px;">:BUY WALLS (FUTURES) 🟢</div>
-            <div id="buyWallsList"></div>
+        <div class="wall-card">
+            <div class="buy-text wall-title">:BUY WALLS<br>(FUTURES) 🟢</div>
+            <div id="bList"></div>
         </div>
     </div>
 
-    <div class="iceberg-section">
-        <div style="color: #a29bfe; font-weight: bold; margin-bottom: 10px;">🔊 ICEBERG DETECTOR (+50K)</div>
-        <div id="icebergLog"></div>
+    <div class="iceberg-card">
+        <div class="iceberg-title">🔊 ICEBERG DETECTOR (+50K)</div>
+        <div id="iLog"></div>
     </div>
 
     <script>
-        let ws, tradeWs;
-        let currentSym = 'btcusdt';
-
-        function hunt() {
-            let val = document.getElementById('alphaInput').value.trim().toLowerCase();
-            if (val) {
-                if (!val.endsWith('usdt')) val += 'usdt';
-                currentSym = val;
-                document.getElementById('symDisplay').innerText = `[ ${val.toUpperCase()} ]`;
-                connect(val);
+        let ws, tWs;
+        function qanas() {
+            let s = document.getElementById('coinIn').value.trim().toLowerCase();
+            if (s) {
+                if (!s.endsWith('usdt')) s += 'usdt';
+                document.getElementById('symText').innerText = `[ ${s.toUpperCase()} ]`;
+                start(s);
             }
         }
-
-        function connect(symbol) {
-            if (ws) ws.close();
-            if (tradeWs) tradeWs.close();
-
+        function start(symbol) {
+            if (ws) ws.close(); if (tWs) tWs.close();
             ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol}@depth20@100ms`);
-            tradeWs = new WebSocket(`wss://fstream.binance.com/ws/${symbol}@aggTrade`);
-
+            tWs = new WebSocket(`wss://fstream.binance.com/ws/${symbol}@aggTrade`);
             ws.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                const price = parseFloat(data.a[0][0]);
-                document.getElementById('mainPrice').innerText = `$${price.toLocaleString()}`;
-
-                let tB = 0, tS = 0;
-                data.b.slice(0, 10).forEach(b => tB += parseFloat(b[1]));
-                data.a.slice(0, 10).forEach(a => tS += parseFloat(a[1]));
-                const total = tB + tS;
-                const bP = ((tB / total) * 100).toFixed(1);
-                
-                document.getElementById('buyBar').style.width = bP + '%';
-                document.getElementById('sellBar').style.width = (100 - bP) + '%';
-                document.getElementById('buyPercent').innerText = bP;
-                document.getElementById('sellPercent').innerText = (100 - bP).toFixed(1);
-
-                document.getElementById('sellWallsList').innerHTML = data.a.slice(0, 5).map(w => `
-                    <div class="wall-item"><span>$${w[0]}</span><span class="seller">${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
-                `).join('');
-
-                document.getElementById('buyWallsList').innerHTML = data.b.slice(0, 5).map(w => `
-                    <div class="wall-item"><span>$${w[0]}</span><span class="buyer">${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
-                `).join('');
+                const d = JSON.parse(e.data);
+                document.getElementById('price').innerText = `$${parseFloat(d.a[0][0]).toLocaleString()}`;
+                let tb = 0, ts = 0;
+                d.b.forEach(b => tb += parseFloat(b[1])); d.a.forEach(a => ts += parseFloat(a[1]));
+                let p = ((tb/(tb+ts))*100).toFixed(1);
+                document.getElementById('bBar').style.width = p+'%'; document.getElementById('sBar').style.width = (100-p)+'%';
+                document.getElementById('bP').innerText = p; document.getElementById('sP').innerText = (100-p).toFixed(1);
+                document.getElementById('sList').innerHTML = d.a.slice(0,5).map(w => `<div class="wall-row"><span>$${w[0]}</span><span class="sell-text">${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>`).join('');
+                document.getElementById('bList').innerHTML = d.b.slice(0,5).map(w => `<div class="wall-row"><span>$${w[0]}</span><span class="buy-text">${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>`).join('');
             };
-
-            tradeWs.onmessage = (e) => {
-                const t = JSON.parse(e.data);
-                const v = parseFloat(t.p) * parseFloat(t.q);
+            tWs.onmessage = (e) => {
+                const t = JSON.parse(e.data); const v = parseFloat(t.p)*parseFloat(t.q);
                 if (v > 50000) {
-                    const log = document.getElementById('icebergLog');
-                    const side = t.m ? 'SELLER' : 'BUYER';
-                    const html = `<div class="log-entry"><span>${new Date().toLocaleTimeString()}</span><span>$${(v/1000).toFixed(1)}K</span><span class="${side.toLowerCase()}">${side}</span></div>`;
-                    log.insertAdjacentHTML('afterbegin', html);
-                    if (log.children.length > 5) log.lastChild.remove();
+                    const log = document.getElementById('iLog');
+                    const html = `<div class="wall-row"><span>${new Date().toLocaleTimeString()}</span><span>$${(v/1000).toFixed(1)}K</span><span class="${t.m?'sell-text':'buy-text'}">${t.m?'SELL':'BUY'}</span></div>`;
+                    log.insertAdjacentHTML('afterbegin', html); if (log.children.length > 5) log.lastChild.remove();
                 }
             };
         }
-        connect(currentSym);
+        start('btcusdt');
     </script>
 </body>
 </html>
