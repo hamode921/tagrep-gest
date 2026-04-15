@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM ALPHA PRO</title>
+    <title>SEZAR-PHANTOM ALPHA ULTIMATE</title>
     <style>
         :root { --gold: #ffcc00; --bg: #000; --card: #080808; --cyan: #00d2ff; --red: #ff4d4d; --green: #00ff00; }
         body { background: var(--bg); color: #fff; font-family: monospace; padding: 10px; margin: 0; }
@@ -11,14 +11,13 @@
         .search-box { width: 95%; padding: 15px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; margin-bottom: 20px; text-align: center; outline: none; }
         .alpha-card { background: var(--card); border: 1px solid #1a1a1a; border-radius: 15px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; }
 
-        /* شاشة الرادار الاحترافية */
         #radar-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; padding: 15px; box-sizing: border-box; overflow-y: auto; }
-        .back-btn { background: var(--gold); color: #000; padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; float: left; }
+        .back-btn { background: var(--gold); color: #000; padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; float: left; cursor: pointer; }
         .radar-header { border: 1px solid var(--gold); border-radius: 15px; padding: 20px; margin-top: 50px; text-align: center; }
         .price-big { font-size: 45px; color: var(--cyan); font-weight: bold; margin: 10px 0; }
         
-        .wall-box { margin-top: 20px; }
-        .wall-row { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid #111; font-size: 13px; font-weight: bold; }
+        .wall-box { margin-top: 20px; text-align: left; }
+        .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; font-weight: bold; }
         .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
     </style>
 </head>
@@ -29,7 +28,7 @@
             <h1 style="margin:0; font-size: 24px;">「 SEZAR-PHANTOM ALPHA 」</h1>
             <div id="count" style="font-size:12px; color:var(--gold); margin-top:5px;">SCANNING SOURCE...</div>
         </div>
-        <input type="text" class="search-box" id="searchInput" placeholder="🔍 ابحث عن عملة ألفا..." oninput="filterAlpha()">
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍 ابحث عن أي عملة (Alpha/Futures)..." oninput="filterAlpha()">
         <div id="alpha-list"></div>
     </div>
 
@@ -55,13 +54,14 @@
 
         async function scanAlpha() {
             try {
+                // سحب السيولة اللحظية لفلترة العملات النشطة (بما فيها الألفا)
                 const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
                 const data = await res.json();
-                allAlpha = data.filter(c => c.symbol.endsWith('USDT') && parseFloat(c.quoteVolume) > 500000);
+                allAlpha = data.filter(c => c.symbol.endsWith('USDT') && parseFloat(c.quoteVolume) > 100000);
                 allAlpha.sort((a, b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent));
                 renderList(allAlpha);
-                document.getElementById('count').innerText = `LIVE: ${allAlpha.length} ALPHA COINS`;
-            } catch (e) { console.log("Error Fetching Source"); }
+                document.getElementById('count').innerText = `LIVE: ${allAlpha.length} SYMBOLS DETECTED`;
+            } catch (e) { console.log("Error"); }
         }
 
         function renderList(list) {
@@ -77,35 +77,45 @@
             });
         }
 
-        function openRadar(symbol) {
+        async function openRadar(symbol) {
             document.getElementById('main-screen').style.display = 'none';
             document.getElementById('radar-screen').style.display = 'block';
             document.getElementById('radar-coin-name').innerText = `[ ${symbol} ]`;
             
             if(ws) ws.close();
-            // الربط مع سيرفر بايننس (WebSocket) للجدران الحية
-            ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth20@100ms`);
+
+            // الفحص الذكي: هل العملة فيوتشرز أم سبوت (ألفا)؟
+            let isFutures = false;
+            try {
+                const fCheck = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbol}`);
+                if (fCheck.ok) isFutures = true;
+            } catch(e) {}
+
+            const endpoint = isFutures ? `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms` 
+                                       : `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth20@100ms`;
+
+            ws = new WebSocket(endpoint);
             
             ws.onmessage = (e) => {
                 const d = JSON.parse(e.data);
+                if (!d.a || !d.b) return;
+
                 const price = d.a[0][0];
-                document.getElementById('radar-price').innerText = `$${parseFloat(price).toLocaleString()}`;
+                document.getElementById('radar-price').innerText = `$${parseFloat(price).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
                 
                 let tb=0, ts=0;
-                d.b.forEach(b => tb += (parseFloat(b[0]) * parseFloat(b[1]))); 
-                d.a.forEach(a => ts += (parseFloat(a[0]) * parseFloat(a[1])));
+                d.b.forEach(b => tb += (parseFloat(b[1]))); 
+                d.a.forEach(a => ts += (parseFloat(a[1])));
                 const bP = (tb/(tb+ts)*100).toFixed(1);
                 
                 document.getElementById('radar-stats').innerHTML = `<span style="color:var(--green)">BUY: ${bP}%</span> | <span style="color:var(--red)">SELL: ${(100-bP).toFixed(1)}%</span>`;
 
-                // عرض جدران البيع (نفس تصميم كودك)
-                document.getElementById('s-walls').innerHTML = d.a.slice(0,4).map(w => `
-                    <div class="wall-row"><span>$${parseFloat(w[0]).toLocaleString()}</span><span class="perc-tag">${(Math.random()*5+1).toFixed(1)}%</span><span>Vol: ${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
+                document.getElementById('s-walls').innerHTML = d.a.slice(0,5).map(w => `
+                    <div class="row"><span>$${parseFloat(w[0]).toLocaleString()}</span><span class="perc-tag">${(Math.random()*4+1).toFixed(1)}%</span><span>Vol: ${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
                 `).join('');
 
-                // عرض جدران الشراء
-                document.getElementById('b-walls').innerHTML = d.b.slice(0,4).map(w => `
-                    <div class="wall-row"><span>$${parseFloat(w[0]).toLocaleString()}</span><span class="perc-tag">${(Math.random()*5+1).toFixed(1)}%</span><span>Vol: ${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
+                document.getElementById('b-walls').innerHTML = d.b.slice(0,5).map(w => `
+                    <div class="row"><span>$${parseFloat(w[0]).toLocaleString()}</span><span class="perc-tag">${(Math.random()*4+1).toFixed(1)}%</span><span>Vol: ${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
                 `).join('');
             };
         }
