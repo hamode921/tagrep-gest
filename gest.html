@@ -4,50 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SEZAR-PHANTOM</title>
-    <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; }
-        .main-title { color: #ffcc00; font-size: 35px; font-weight: bold; margin: 40px 0; text-shadow: 0 0 15px rgba(255,204,0,0.4); }
-        
-        /* خانة البحث الأصلية السودة */
-        .search-box { 
-            width: 90%; padding: 18px; border-radius: 25px; border: 1px solid #222; 
-            background: #111; color: #666; font-size: 16px; margin: 0 auto 30px auto; 
-            display: block; outline: none; text-align: center;
-        }
-
-        .coin-list { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-        
-        /* الكارتات الدائرية الأصلية */
-        .coin-item { 
-            width: 95%; background: #0a0a0a; border: 1px solid #1a1a1a; 
-            border-radius: 20px; padding: 20px; display: flex; 
-            justify-content: space-between; align-items: center; box-sizing: border-box;
-        }
-
-        .analyze-link { color: #ffcc00; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: bold; }
-        .tag { background: #332200; color: #ffcc00; border: 1px solid #ffcc00; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; }
-    </style>
 </head>
-<body>
+<body style="background-color: #000; color: #fff; font-family: sans-serif; text-align: center;">
 
-    <h1 class="main-title">「 SEZAR-PHANTOM 」</h1>
+    <h1 style="color: #ffcc00; margin-top: 40px;">「 SEZAR-PHANTOM 」</h1>
     
-    <input type="text" class="search-box" placeholder="... (Spot & Futures) ابحث 🔍">
+    <input type="text" placeholder="... (Spot & Futures) ابحث" style="width: 80%; padding: 15px; border-radius: 20px; border: 1px solid #333; background: #111; color: #fff; margin-bottom: 30px;">
 
-    <div class="coin-list">
+    <div id="list">
         <script>
-            // قائمة العملات (الأساسية + الألفا) بدون تغيير البرمجة
-            const symbols = [
+            // القائمة الأصلية مع إضافة عملات الألفا
+            const coins = [
                 'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 
                 'PEPEUSDT', 'WIFUSDT', 'PIPPINUSDT', 'NEOUSDT', 
                 'LTCUSDT', 'QTUMUSDT', 'ADAUSDT', 'XRPUSDT'
             ];
 
-            symbols.forEach(s => {
+            coins.forEach(s => {
                 document.write(`
-                    <div class="coin-item">
-                        <div class="analyze-link">🔭 تحليل</div>
-                        <div><span class="tag">FUTURES</span> <span style="font-weight:bold; font-size:19px; margin-left:10px;">${s}</span></div>
+                    <div style="background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 15px; padding: 20px; margin: 10px auto; width: 90%; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="color: #ffcc00; font-weight: bold; cursor: pointer;">🔭 تحليل</div>
+                        <div>
+                            <span style="background: #332200; color: #ffcc00; border: 1px solid #ffcc00; padding: 3px 8px; border-radius: 5px; font-size: 12px;">FUTURES</span>
+                            <span style="font-size: 18px; font-weight: bold; margin-left: 10px;">${s}</span>
+                        </div>
                     </div>
                 `);
             });
@@ -56,4 +36,3 @@
 
 </body>
 </html>
-
