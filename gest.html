@@ -3,35 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM | ALPHA VOICE RADAR</title>
+    <title>SEZAR-PHANTOM | BINANCE RADAR</title>
     <style>
-        :root { --gold: #ffcc00; --cyan: #00d4ff; --bg: #000; --red: #ff4d4d; --green: #00ff00; --purple: #a29bfe; }
-        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; text-align: center; overflow-x: hidden; }
-        .header { border: 2px solid var(--gold); padding: 15px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); }
+        :root { --gold: #ffcc00; --cyan: #00d4ff; --bg: #000; --red: #ff4d4d; --green: #00ff00; }
+        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; text-align: center; }
         
-        /* قناص الألفا */
-        .search-area { margin-bottom: 20px; display: flex; justify-content: center; gap: 8px; }
-        input { padding: 12px; border-radius: 8px; border: 1px solid var(--gold); background: #111; color: white; width: 65%; font-weight: bold; outline: none; }
-        button { padding: 12px 20px; background: var(--gold); color: black; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: white; transform: scale(1.05); }
-
-        .price-display { font-size: 52px; font-weight: bold; color: var(--cyan); margin: 10px 0; text-shadow: 0 0 20px var(--cyan); }
+        .header { border: 2px solid var(--gold); padding: 10px; margin-bottom: 20px; border-radius: 10px; }
+        .symbol-name { font-size: 20px; color: var(--gold); letter-spacing: 2px; }
         
-        /* بار السيولة */
-        .liquidity-bar-container { width: 95%; margin: 20px auto; }
-        .bar-bg { background: #222; height: 16px; border-radius: 8px; display: flex; overflow: hidden; border: 1px solid #444; }
-        .buy-bar { background: var(--green); height: 100%; transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .sell-bar { background: var(--red); height: 100%; transition: width 0.4s ease; }
+        /* خانة البحث مدمجة بدون تشويه التصميم */
+        .alpha-search { margin: 10px auto; width: 90%; display: flex; gap: 5px; }
+        .alpha-search input { flex: 3; background: #111; border: 1px solid #333; color: white; padding: 8px; border-radius: 5px; }
+        .alpha-search button { flex: 1; background: var(--gold); color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
-        .walls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .wall-box { border: 1px solid #333; border-radius: 12px; padding: 10px; background: #050505; }
+        .price-display { font-size: 55px; font-weight: bold; color: var(--cyan); margin: 15px 0; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+        
+        .liquidity-bar-container { margin: 20px auto; width: 90%; }
+        .liquidity-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        .bar-bg { background: #333; height: 12px; border-radius: 6px; display: flex; overflow: hidden; }
+        .buy-bar { background: var(--green); height: 100%; transition: width 0.5s ease; }
+        .sell-bar { background: var(--red); height: 100%; transition: width 0.5s ease; }
+
+        .walls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .wall-box { border: 1px solid #222; border-radius: 8px; padding: 10px; background: #0a0a0a; }
         .wall-item { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; border-bottom: 1px solid #1a1a1a; padding-bottom: 3px; }
-
-        /* الأيسبرغ الصوتي */
-        .iceberg-section { border: 2px solid var(--purple); border-radius: 15px; padding: 15px; background: rgba(162, 155, 254, 0.05); }
-        .log-entry { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-bottom: 1px solid #222; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
+        .iceberg-section { margin-top: 20px; border: 2px solid #8e44ad; border-radius: 15px; padding: 15px; background: rgba(142, 68, 173, 0.05); }
+        .log-entry { display: flex; justify-content: space-between; font-size: 14px; padding: 5px 0; border-bottom: 1px solid #222; }
+
         .buyer { color: var(--green); font-weight: bold; }
         .seller { color: var(--red); font-weight: bold; }
     </style>
@@ -39,21 +38,21 @@
 <body>
 
     <div class="header">
-        <div style="font-size: 26px; font-weight: bold; color: var(--gold); letter-spacing: 2px;">「 SEZAR-PHANTOM v3.0 」</div>
-        <div id="symbolDisplay" style="color: var(--cyan); margin-top:8px; font-weight: bold;">[ BTCUSDT ]</div>
+        <div style="font-size: 24px; font-weight: bold; color: var(--gold);">「 SEZAR-PHANTOM 」</div>
+        <div class="symbol-name" id="symDisplay">[ BTCUSDT ]</div>
     </div>
 
-    <div class="search-area">
-        <input type="text" id="coinInput" placeholder="اكتب اسم العملة (مثل SOL أو PEPE)">
-        <button onclick="huntAlpha()">قنص الألفا 🚀</button>
+    <div class="alpha-search">
+        <input type="text" id="alphaInput" placeholder="Alpha Symbol (e.g. PEPE)">
+        <button onclick="hunt()">قنص</button>
     </div>
 
     <div class="price-display" id="mainPrice">0.00</div>
 
     <div class="liquidity-bar-container">
-        <div style="display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 8px; font-weight: bold;">
-            <span class="buyer">BUY: <span id="bP">50</span>%</span>
-            <span class="seller">SELL: <span id="sP">50</span>%</span>
+        <div class="liquidity-info">
+            <span class="buyer">BUY: <span id="buyPercent">50</span>%</span>
+            <span class="seller">SELL: <span id="sellPercent">50</span>%</span>
         </div>
         <div class="bar-bg">
             <div id="buyBar" class="buy-bar" style="width: 50%;"></div>
@@ -63,96 +62,79 @@
 
     <div class="walls-grid">
         <div class="wall-box">
-            <div class="seller" style="font-size:15px; margin-bottom:10px;">SELL WALLS (FUT) 🔴</div>
-            <div id="sellList"></div>
+            <div class="seller" style="margin-bottom: 10px;">:SELL WALLS (FUTURES) 🔴</div>
+            <div id="sellWallsList"></div>
         </div>
         <div class="wall-box">
-            <div class="buyer" style="font-size:15px; margin-bottom:10px;">BUY WALLS (FUT) 🟢</div>
-            <div id="buyList"></div>
+            <div class="buyer" style="margin-bottom: 10px;">:BUY WALLS (FUTURES) 🟢</div>
+            <div id="buyWallsList"></div>
         </div>
     </div>
 
     <div class="iceberg-section">
-        <div style="color: var(--purple); font-size:16px; margin-bottom:10px; font-weight:bold;">🔊 VOICE ALERT: ICEBERG (+50K)</div>
-        <div id="iceLog"></div>
+        <div style="color: #a29bfe; font-weight: bold; margin-bottom: 10px;">🔊 ICEBERG DETECTOR (+50K)</div>
+        <div id="icebergLog"></div>
     </div>
 
     <script>
         let ws, tradeWs;
-        let currentSymbol = 'btcusdt';
+        let currentSym = 'btcusdt';
 
-        // نظام النطق الصوتي
-        function speakAlert(text) {
-            const speech = new SpeechSynthesisUtterance(text);
-            speech.lang = 'en-US';
-            speech.rate = 1.2;
-            window.speechSynthesis.speak(speech);
-        }
-
-        function huntAlpha() {
-            let input = document.getElementById('coinInput').value.trim().toLowerCase();
-            if (input) {
-                if (!input.endsWith('usdt')) input += 'usdt';
-                currentSymbol = input;
-                document.getElementById('symbolDisplay').innerText = `[ ${input.toUpperCase()} ]`;
-                startRadar(input);
-                speakAlert(`Target Locked: ${input}`);
+        function hunt() {
+            let val = document.getElementById('alphaInput').value.trim().toLowerCase();
+            if (val) {
+                if (!val.endsWith('usdt')) val += 'usdt';
+                currentSym = val;
+                document.getElementById('symDisplay').innerText = `[ ${val.toUpperCase()} ]`;
+                connect(val);
             }
         }
 
-        function startRadar(symbol) {
+        function connect(symbol) {
             if (ws) ws.close();
             if (tradeWs) tradeWs.close();
 
             ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol}@depth20@100ms`);
             tradeWs = new WebSocket(`wss://fstream.binance.com/ws/${symbol}@aggTrade`);
 
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
+            ws.onmessage = (e) => {
+                const data = JSON.parse(e.data);
                 const price = parseFloat(data.a[0][0]);
-                document.getElementById('mainPrice').innerText = `$${price.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+                document.getElementById('mainPrice').innerText = `$${price.toLocaleString()}`;
 
                 let tB = 0, tS = 0;
-                data.b.forEach(b => tB += parseFloat(b[1]));
-                data.a.forEach(a => tS += parseFloat(a[1]));
+                data.b.slice(0, 10).forEach(b => tB += parseFloat(b[1]));
+                data.a.slice(0, 10).forEach(a => tS += parseFloat(a[1]));
                 const total = tB + tS;
-                const bP = ((tB/total)*100).toFixed(1);
-                const sPer = (100 - bP).toFixed(1);
-
+                const bP = ((tB / total) * 100).toFixed(1);
+                
                 document.getElementById('buyBar').style.width = bP + '%';
-                document.getElementById('sellBar').style.width = sPer + '%';
-                document.getElementById('bP').innerText = bP;
-                document.getElementById('sP').innerText = sPer;
+                document.getElementById('sellBar').style.width = (100 - bP) + '%';
+                document.getElementById('buyPercent').innerText = bP;
+                document.getElementById('sellPercent').innerText = (100 - bP).toFixed(1);
 
-                document.getElementById('sellList').innerHTML = data.a.slice(0, 5).map(w => `
+                document.getElementById('sellWallsList').innerHTML = data.a.slice(0, 5).map(w => `
                     <div class="wall-item"><span>$${w[0]}</span><span class="seller">${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
                 `).join('');
 
-                document.getElementById('buyList').innerHTML = data.b.slice(0, 5).map(w => `
+                document.getElementById('buyWallsList').innerHTML = data.b.slice(0, 5).map(w => `
                     <div class="wall-item"><span>$${w[0]}</span><span class="buyer">${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
                 `).join('');
             };
 
-            tradeWs.onmessage = (event) => {
-                const trade = JSON.parse(event.data);
-                const val = parseFloat(trade.p) * parseFloat(trade.q);
-                if (val > 50000) { 
-                    const side = trade.m ? 'SELLER' : 'BUYER';
-                    const amountK = (val/1000).toFixed(0);
-                    
-                    // التنبيه الصوتي
-                    speakAlert(`${side} detected. ${amountK} K.`);
-
-                    const log = document.getElementById('iceLog');
-                    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-                    const html = `<div class="log-entry"><span>${time}</span><span>$${amountK}K</span><span class="${side.toLowerCase()}">${side}</span></div>`;
+            tradeWs.onmessage = (e) => {
+                const t = JSON.parse(e.data);
+                const v = parseFloat(t.p) * parseFloat(t.q);
+                if (v > 50000) {
+                    const log = document.getElementById('icebergLog');
+                    const side = t.m ? 'SELLER' : 'BUYER';
+                    const html = `<div class="log-entry"><span>${new Date().toLocaleTimeString()}</span><span>$${(v/1000).toFixed(1)}K</span><span class="${side.toLowerCase()}">${side}</span></div>`;
                     log.insertAdjacentHTML('afterbegin', html);
                     if (log.children.length > 5) log.lastChild.remove();
                 }
             };
         }
-
-        startRadar(currentSymbol);
+        connect(currentSym);
     </script>
 </body>
 </html>
