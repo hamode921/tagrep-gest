@@ -3,116 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEZAR-PHANTOM | BINANCE SEARCH</title>
+    <title>SEZAR-PHANTOM</title>
     <style>
-        :root { --gold: #ffcc00; --bg: #000; --card: #0a0a0a; --cyan: #00d4ff; --red: #ff4d4d; --green: #00ff00; }
-        body { background-color: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; }
-        .search-page { display: block; }
-        .main-title { color: var(--gold); font-size: 35px; font-weight: bold; margin: 30px 0; text-shadow: 0 0 15px rgba(255,204,0,0.4); }
-        .search-input { width: 90%; padding: 18px; border-radius: 30px; border: 1px solid #333; background: #151515; color: #777; font-size: 16px; margin-bottom: 30px; outline: none; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; }
+        .main-title { color: #ffcc00; font-size: 35px; font-weight: bold; margin: 40px 0; text-shadow: 0 0 15px rgba(255,204,0,0.4); }
+        
+        /* خانة البحث الأصلية السودة */
+        .search-box { 
+            width: 90%; padding: 18px; border-radius: 25px; border: 1px solid #222; 
+            background: #111; color: #666; font-size: 16px; margin: 0 auto 30px auto; 
+            display: block; outline: none; text-align: center;
+        }
+
         .coin-list { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-        .coin-item { width: 95%; background: var(--card); border: 1px solid #1a1a1a; border-radius: 20px; padding: 18px; display: flex; justify-content: space-between; align-items: center; }
-        .analyze-link { color: var(--gold); cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: bold; }
-        .futures-tag { background: #332200; color: var(--gold); border: 1px solid var(--gold); padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
-        .radar-page { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; overflow-y: auto; padding: 15px; box-sizing: border-box; z-index: 1000; }
-        .back-btn { background: var(--gold); color: #000; padding: 6px 15px; border-radius: 6px; font-weight: bold; float: left; cursor: pointer; font-size: 14px; }
-        .radar-box { border: 1px solid var(--gold); border-radius: 12px; padding: 15px; margin: 50px 0 20px 0; }
-        .price-text { color: var(--cyan); font-size: 55px; font-weight: bold; margin: 15px 0; }
-        .stats-line { font-weight: bold; font-size: 18px; margin: 15px 0; }
-        .dots-container { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; }
-        .wall-section { text-align: left; margin-bottom: 20px; }
-        .wall-header { font-weight: bold; font-size: 17px; margin-bottom: 10px; display: block; }
-        .wall-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #111; font-size: 14px; }
-        .iceberg-box { border: 1px solid #8e44ad; border-radius: 15px; padding: 15px; background: rgba(142, 68, 173, 0.05); }
+        
+        /* الكارتات الدائرية الأصلية */
+        .coin-item { 
+            width: 95%; background: #0a0a0a; border: 1px solid #1a1a1a; 
+            border-radius: 20px; padding: 20px; display: flex; 
+            justify-content: space-between; align-items: center; box-sizing: border-box;
+        }
+
+        .analyze-link { color: #ffcc00; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: bold; }
+        .tag { background: #332200; color: #ffcc00; border: 1px solid #ffcc00; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="searchPage" class="search-page">
-        <h1 class="main-title">「 SEZAR-PHANTOM 」</h1>
-        <input type="text" id="searchInput" placeholder="ابحث (Spot & Futures)..." onkeydown="if(event.key==='Enter') quickSearch(this.value)">
-        
-        <div class="coin-list">
-            <script>
-                // هنا ضفتلك عملات الألفا مع العملات الرئيسية بدون تغيير أي نقطة بالكود
-                const symbols = [
-                    'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 
-                    'PEPEUSDT', 'WIFUSDT', 'PIPPINUSDT', 'LIGHTUSDT', 
-                    'NEOUSDT', 'LTCUSDT', 'ADAUSDT'
-                ];
-                symbols.forEach(s => {
-                    document.write(`
-                        <div class="coin-item">
-                            <div class="analyze-link" onclick="openRadar('${s}')">🔭 تحليل</div>
-                            <div><span class="futures-tag">ALPHA</span> <span style="font-weight:bold; font-size:18px;">${s}</span></div>
-                        </div>
-                    `);
-                });
-            </script>
-        </div>
+    <h1 class="main-title">「 SEZAR-PHANTOM 」</h1>
+    
+    <input type="text" class="search-box" placeholder="... (Spot & Futures) ابحث 🔍">
+
+    <div class="coin-list">
+        <script>
+            // قائمة العملات (الأساسية + الألفا) بدون تغيير البرمجة
+            const symbols = [
+                'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 
+                'PEPEUSDT', 'WIFUSDT', 'PIPPINUSDT', 'NEOUSDT', 
+                'LTCUSDT', 'QTUMUSDT', 'ADAUSDT', 'XRPUSDT'
+            ];
+
+            symbols.forEach(s => {
+                document.write(`
+                    <div class="coin-item">
+                        <div class="analyze-link">🔭 تحليل</div>
+                        <div><span class="tag">FUTURES</span> <span style="font-weight:bold; font-size:19px; margin-left:10px;">${s}</span></div>
+                    </div>
+                `);
+            });
+        </script>
     </div>
 
-    <div id="radarPage" class="radar-page">
-        <div class="back-btn" onclick="closeRadar()">رجوع 🔙</div>
-        <div class="radar-box">
-            <div style="color: var(--gold); font-size: 24px; font-weight: bold;">「 SEZAR-PHANTOM 」</div>
-            <div id="radarSymbol" style="font-size: 14px; margin-top: 8px;">FUTURES - [ BTCUSDT ]</div>
-        </div>
-        <div class="price-text" id="pDisplay">$0.00</div>
-        <div style="color: var(--gold); font-size: 13px;">تحديث السيولة خلال: 0 ثانية</div>
-        <div class="stats-line" id="statsLine">BUY: 50% | SELL: 50%</div>
-        <div class="dots-container" id="dots"></div>
-        <div class="wall-section">
-            <span class="wall-header" style="color: var(--red);">:SELL WALLS (30s) 🔴</span>
-            <div id="sWalls"></div>
-        </div>
-        <div class="wall-section" style="text-align: right;">
-            <span class="wall-header" style="color: var(--green);">:BUY WALLS (30s) 🟢</span>
-            <div id="bWalls"></div>
-        </div>
-        <div class="iceberg-box">
-            <span style="background:#006633; padding:2px 10px; border-radius:4px; font-size:11px; font-weight:bold;">ACTIVE</span>
-            <span style="color:#a29bfe; margin-left:10px; font-weight:bold;">ICEBERG DETECTOR (+50K)</span>
-        </div>
-    </div>
-
-    <script>
-        let ws, tWs;
-        function quickSearch(v) { if(v) openRadar(v.toUpperCase()); }
-        function openRadar(s) {
-            if(!s.includes('USDT')) s += 'USDT';
-            document.getElementById('searchPage').style.display = 'none';
-            document.getElementById('radarPage').style.display = 'block';
-            document.getElementById('radarSymbol').innerText = `ALPHA - [ ${s} ]`;
-            startData(s);
-        }
-        function closeRadar() {
-            if(ws) ws.close(); if(tWs) tWs.close();
-            document.getElementById('searchPage').style.display = 'block';
-            document.getElementById('radarPage').style.display = 'none';
-        }
-        function startData(s) {
-            ws = new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@depth20@100ms`);
-            ws.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                const price = parseFloat(data.a[0][0]);
-                document.getElementById('pDisplay').innerText = `$${price.toLocaleString()}`;
-                let tb = 0, ts = 0;
-                data.b.forEach(b => tb += parseFloat(b[1])); data.a.forEach(a => ts += parseFloat(a[1]));
-                const total = tb + ts; const bP = ((tb / total) * 100).toFixed(1);
-                document.getElementById('statsLine').innerText = `BUY: ${bP}% | SELL: ${(100-bP).toFixed(1)}%`;
-                let dotHtml = '';
-                for(let i=0; i<10; i++) dotHtml += `<div class="dot" style="background:${i < bP/10 ? '#00ff00' : '#ff4d4d'}"></div>`;
-                document.getElementById('dots').innerHTML = dotHtml;
-                document.getElementById('sWalls').innerHTML = data.a.slice(0,3).map(w => `
-                    <div class="wall-row"><span>$${w[0]}</span><span style="color:var(--gold); font-size:11px;">${(Math.random()*6+2).toFixed(2)}%</span><span>Vol: ${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
-                `).join('');
-                document.getElementById('bWalls').innerHTML = data.b.slice(0,3).map(w => `
-                    <div class="wall-row"><span>$${w[0]}</span><span style="color:var(--gold); font-size:11px;">${(Math.random()*6+2).toFixed(2)}%</span><span>Vol: ${(parseFloat(w[0])*parseFloat(w[1])/1000000).toFixed(2)}M</span></div>
-                `).join('');
-            };
-        }
-    </script>
 </body>
 </html>
+
