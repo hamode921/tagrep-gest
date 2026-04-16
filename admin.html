@@ -1,0 +1,31 @@
+<div class="box">
+    <h3>إضافة مشترك جديد (نظام سيزو)</h3>
+    <input type="text" id="userName" placeholder="اسم المشترك">
+    <input type="text" id="userKey" placeholder="كود التفعيل">
+    <select id="duration" style="background:#111; color:#fff; padding:10px; margin:5px; width:85%;">
+        <option value="7">أسبوع واحد</option>
+        <option value="30">شهر كامل</option>
+        <option value="365">سنة (VIP)</option>
+    </select>
+    <button onclick="addUser()">تفعيل المشترك +</button>
+</div>
+
+<script>
+function addUser() {
+    const name = document.getElementById('userName').value;
+    const key = document.getElementById('userKey').value;
+    const days = parseInt(document.getElementById('duration').value);
+    
+    // حساب تاريخ الانتهاء تلقائياً من اليوم
+    let expiry = new Date();
+    expiry.setDate(expiry.getDate() + days);
+
+    db.collection("users").doc(key).set({
+        name: name,
+        key: key,
+        expiry: expiry.toISOString().split('T')[0], // يخزن التاريخ بصيغة YYYY-MM-DD
+        deviceId: null, // نعوفه فارغ حتى يربط على أول جهاز يدخل منه
+        active: true
+    }).then(() => { alert("تم تفعيل الاشتراك بنجاح!"); loadUsers(); });
+}
+</script>
