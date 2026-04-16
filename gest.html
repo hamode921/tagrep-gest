@@ -45,12 +45,12 @@
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
-<body onload="checkAuth()">
+<body>
 
-    <div id="auth-screen" class="lock-box">
+    <div id="auth-screen" class="lock-box" style="display: block;">
         <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 تفعيل SEZAR-PHANTOM PRO</div>
         <div class="secure-note">هذا الرمز يعمل على جهاز واحد فقط<br>ولا يعمل على جهاز غيره نهائياً</div>
-        <input type="text" id="pass-key" class="pass" placeholder="•••••">
+        <input type="text" id="pass-key" class="pass" placeholder="أدخل الرمز هنا">
         <button onclick="activate()" class="login-btn">تسجيل دخول</button>
         <div style="display:flex; justify-content:space-around; margin-top:15px; border-top:1px solid #222; padding-top:10px;">
             <a href="https://t.me/se44se" target="_blank" style="color:var(--gold); text-decoration:none; font-size:10px;">✈️ تليجرام</a>
@@ -58,13 +58,13 @@
         </div>
     </div>
 
-    <div id="search-screen">
+    <div id="search-screen" style="display: none;">
         <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
         <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث (Spot & Futures)..." oninput="searchCoins()">
         <div id="results-list"></div>
     </div>
 
-    <div id="radar-ui">
+    <div id="radar-ui" style="display: none;">
         <div class="header">
             <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
             <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
@@ -82,7 +82,6 @@
     </div>
 
     <script>
-        // إعدادات الخزنة الخاصة بمشروع سيزو
         const firebaseConfig = {
             apiKey: "AIzaSyAzEZksgZMPbY79K_TM3mHKeW1shQ6V-lY",
             authDomain: "sezar-phantom-auth.firebaseapp.com",
@@ -96,20 +95,29 @@
 
         let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt;
 
-        function checkAuth() { if (localStorage.getItem('sz_ultimate_v1') === 'true') { showSearch(); } }
-        
+        // الحماية: أول ما يفتح المتصفح يشوف إذا مسجل دخول سابقاً
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('sz_ultimate_v1') === 'true') {
+                showSearch();
+            }
+        });
+
         async function activate() { 
             const key = document.getElementById('pass-key').value;
-            if(!key) return;
+            if(!key) { alert("اكتب الرمز أولاً!"); return; }
+            
             try {
+                // فحص الكود من الخزنة
                 const doc = await db.collection("users").doc(key).get();
                 if (doc.exists) { 
                     localStorage.setItem('sz_ultimate_v1', 'true'); 
                     showSearch(); 
                 } else { 
-                    alert("الكود غلط!"); 
+                    alert("الرمز خطأ يا ملك!"); 
                 } 
-            } catch(e) { alert("خطأ في الاتصال بالخزنة!"); }
+            } catch(e) { 
+                alert("مشكلة بالاتصال بالخزنة!"); 
+            }
         }
         
         async function showSearch() {
@@ -124,10 +132,8 @@
                 ]);
                 const spotData = await spotRes.json();
                 const futData = await futRes.json();
-                
                 let spotList = spotData.symbols.filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT')).map(s => ({s: s.symbol, m: 'spot'}));
                 let futList = futData.symbols.filter(s => s.status === 'TRADING' && s.contractType === 'PERPETUAL').map(s => ({s: s.symbol, m: 'futures'}));
-                
                 allCoins = [...spotList, ...futList];
             }
             searchCoins();
