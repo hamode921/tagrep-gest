@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; --green: #22c55e; }
+        :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; }
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 280px; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; border-radius: 5px; font-size: 18px; outline: none; }
@@ -16,7 +16,8 @@
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 15px; width: 90%; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 20px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .price-box { border: 1px dashed #444; padding: 10px; font-size: 30px; font-weight: bold; background: #050505; color: #00d2ff; margin-bottom: 10px; border-radius: 8px; }
-        #chart-widget { width: 100%; height: 350px; margin: 10px 0; border: 1px solid #222; border-radius: 10px; overflow: hidden; }
+        /* حاوية الشارت */
+        #chart-wrapper { width: 100%; height: 400px; margin: 10px 0; border: 1px solid #222; border-radius: 10px; overflow: hidden; background: #000; }
         .row { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #111; font-size: 12px; }
         .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 1000; }
         .contact-dev a { color: var(--gold); text-decoration: none; border: 1px solid var(--gold); padding: 8px 15px; border-radius: 6px; font-size: 12px; }
@@ -43,7 +44,9 @@
         </div>
         <div class="price-box" id="coin-price">...Loading</div>
         
-        <div id="chart-widget"></div>
+        <div id="chart-wrapper">
+            <div id="tradingview_widget"></div>
+        </div>
 
         <div id="buy-sell-per" style="padding:10px; font-weight:bold; font-size:13px; color:#aaa;">BUY: --% | SELL: --%</div>
         <div id="s-walls"></div>
@@ -51,6 +54,7 @@
         <div class="contact-dev"><a href="https://t.me/se44se">✈️ المطور</a></div>
     </div>
 
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAzEZksgZMPbY79K_TM3mHKeW1shQ6V-lY",
@@ -106,24 +110,22 @@
             document.getElementById('radar-ui').style.display = 'block';
             document.getElementById('current-coin-name').innerText = s;
             
-            // تحميل الشارت العالمي فوراً
-            const container = document.getElementById('chart-widget');
-            container.innerHTML = ''; 
-            const script = document.createElement('script');
-            script.src = "https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js";
-            script.type = "text/javascript";
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "interval": "1m",
-                "width": "100%",
-                "isTransparent": false,
-                "height": "100%",
+            // تشغيل الشارت الصافي
+            new TradingView.widget({
+                "autosize": true,
                 "symbol": "BINANCE:" + s,
-                "showIntervalTabs": true,
+                "interval": "1",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
                 "locale": "ar",
-                "colorTheme": "dark"
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "hide_top_toolbar": false,
+                "hide_legend": true,
+                "save_image": false,
+                "container_id": "tradingview_widget"
             });
-            container.appendChild(script);
 
             updatePrice(s); updateLiq(s);
             pInt = setInterval(() => updatePrice(s), 2000); 
