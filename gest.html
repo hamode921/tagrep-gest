@@ -9,7 +9,7 @@
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         
-        /* تفعيل السحب لليمين واليسار عند التصغير */
+        /* تحسين السحب الجانبي العميق */
         #zoom-wrapper {
             width: 100vw;
             overflow-x: auto; 
@@ -19,7 +19,7 @@
         }
 
         #zoom-container {
-            transition: transform 0.3s ease;
+            transition: transform 0.2s ease-out;
             transform-origin: top center;
             width: 100%;
             display: flex;
@@ -27,29 +27,31 @@
             align-items: center;
         }
 
+        /* أزرار ناعمة وصغيرة */
         .zoom-controls {
             position: fixed;
-            right: 8px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             display: none;
             flex-direction: column;
-            gap: 8px;
-            z-index: 9999;
+            gap: 12px;
+            z-index: 99999;
         }
         .zoom-btn {
-            background: rgba(251, 191, 36, 0.15);
-            border: 1px solid rgba(251, 191, 36, 0.5);
+            background: rgba(0, 0, 0, 0.7);
+            border: 1.5px solid var(--gold);
             color: var(--gold);
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
+            font-size: 15px;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
         }
 
         body { background: var(--bg); color: #fff; font-family: monospace; margin: 0; padding: 10px; overflow-x: hidden; }
@@ -61,7 +63,7 @@
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; position: relative; }
         .back-btn { position: absolute; left: 8px; top: 8px; background: var(--gold); color: #000; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
         .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
-        #chart-container { width: 100%; height: 350px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; overflow: hidden; }
+        #chart-container { width: 100%; height: 380px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; overflow: hidden; }
         #chart-frame { width: 100%; height: 100%; border: none; }
         .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
         #buy-sell-per { text-align:center; font-weight:bold; margin-bottom:10px; font-size: 14px; }
@@ -71,8 +73,6 @@
         .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
         .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
         #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; }
-        .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
-        .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
         .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 100; }
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
     </style>
@@ -82,7 +82,7 @@
     <div class="zoom-controls" id="zoomCtrl">
         <button class="zoom-btn" onclick="setZoom(1.1)">+</button>
         <button class="zoom-btn" onclick="setZoom(1.0)">🏠</button>
-        <button class="zoom-btn" onclick="setZoom(0.7)">-</button>
+        <button class="zoom-btn" onclick="setZoom(0.5)">--</button>
     </div>
 
     <div id="zoom-wrapper">
@@ -209,9 +209,9 @@
             document.getElementById('zoomCtrl').style.display = 'flex';
             document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${mode.toUpperCase()}`;
             
-            // تعديل الرابط ليتطابق مع بيانات بينانس فيوتشرز
-            const sym = symbol.replace('USDT', '');
-            document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}${mode==='futures'?'PERP':''}&interval=1&theme=dark`;
+            // تحديث الشارت للعمل الفوري بدون تقطيع
+            const tvSym = `BINANCE:${symbol}${mode==='futures'?'PERP':''}`;
+            document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=${tvSym}&interval=1&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=false&hide_side_toolbar=true&allow_symbol_change=true&save_image=false`;
 
             stopIntervals(); updatePrice(); updateLiquidity();
             pInt = setInterval(updatePrice, 1000); lInt = setInterval(updateLiquidity, 30000);
