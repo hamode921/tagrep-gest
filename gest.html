@@ -3,28 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SEZAR-PHANTOM PRO ULTIMATE</title>
+    <title>SEZAR-PHANTOM PRO</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; }
+        :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; }
-        
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 280px; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; border-radius: 5px; font-size: 18px; outline: none; }
         button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; }
-
         #search-screen, #radar-ui { display: none; width: 100%; max-width: 450px; text-align: center; }
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 15px; width: 90%; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 20px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        
-        .tf-btn { background: #111; color: #888; border: 1px solid #333; padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 12px; margin: 2px; }
-        .tf-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: bold; }
-
-        #chart-container { width: 100%; height: 350px; margin: 10px 0; border: 1px solid #222; border-radius: 10px; background: #000; position: relative; }
-
-        .price-box { border: 1px dashed #444; padding: 10px; font-size: 32px; font-weight: bold; background: #050505; color: #00d2ff; margin-bottom: 5px; border-radius: 8px; }
+        .price-box { border: 1px dashed #444; padding: 10px; font-size: 30px; font-weight: bold; background: #050505; color: #00d2ff; margin-bottom: 10px; border-radius: 8px; }
+        #chart-widget { width: 100%; height: 350px; margin: 10px 0; border: 1px solid #222; border-radius: 10px; overflow: hidden; }
         .row { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #111; font-size: 12px; }
         .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 1000; }
         .contact-dev a { color: var(--gold); text-decoration: none; border: 1px solid var(--gold); padding: 8px 15px; border-radius: 6px; font-size: 12px; }
@@ -49,23 +41,13 @@
             <button onclick="goBack()" style="position:absolute; left:10px; top:12px; background:var(--gold); border:none; padding:5px 10px; border-radius:5px; font-size:12px; font-weight:bold;">🔙</button>
             <h3 id="current-coin-name" style="margin:0; color:var(--gold);">---</h3>
         </div>
+        <div class="price-box" id="coin-price">...Loading</div>
+        
+        <div id="chart-widget"></div>
 
-        <div class="price-box" id="coin-price">$0.00</div>
-
-        <div id="timeframes">
-            <button class="tf-btn active" onclick="changeTF('1m', this)">1m</button>
-            <button class="tf-btn" onclick="changeTF('15m', this)">15m</button>
-            <button class="tf-btn" onclick="changeTF('1h', this)">1h</button>
-            <button class="tf-btn" onclick="changeTF('4h', this)">4h</button>
-            <button class="tf-btn" onclick="changeTF('1d', this)">1d</button>
-        </div>
-
-        <div id="chart-container"></div>
-
-        <div id="buy-sell-per" style="padding:10px; font-weight:bold; font-size:13px;">BUY: --% | SELL: --%</div>
+        <div id="buy-sell-per" style="padding:10px; font-weight:bold; font-size:13px; color:#aaa;">BUY: --% | SELL: --%</div>
         <div id="s-walls"></div>
         <div id="b-walls" style="margin-top:10px; margin-bottom:80px;"></div>
-
         <div class="contact-dev"><a href="https://t.me/se44se">✈️ المطور</a></div>
     </div>
 
@@ -81,7 +63,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let allCoins = [], pInt, lInt, chart, candleSeries, currentTF = '1m', currentSymbol = '';
+        let allCoins = [], pInt, lInt;
 
         async function checkSaved() {
             const k = localStorage.getItem('sz_key');
@@ -120,76 +102,38 @@
         }
 
         function startRadar(s) {
-            currentSymbol = s;
             document.getElementById('search-screen').style.display = 'none';
             document.getElementById('radar-ui').style.display = 'block';
             document.getElementById('current-coin-name').innerText = s;
             
-            // تهيئة الشارت فوراً
-            setTimeout(() => {
-                initChart();
-                loadChartData(s, currentTF);
-            }, 100);
+            // تحميل الشارت العالمي فوراً
+            const container = document.getElementById('chart-widget');
+            container.innerHTML = ''; 
+            const script = document.createElement('script');
+            script.src = "https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js";
+            script.type = "text/javascript";
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "interval": "1m",
+                "width": "100%",
+                "isTransparent": false,
+                "height": "100%",
+                "symbol": "BINANCE:" + s,
+                "showIntervalTabs": true,
+                "locale": "ar",
+                "colorTheme": "dark"
+            });
+            container.appendChild(script);
 
-            updatePrice(s); 
-            updateLiq(s);
+            updatePrice(s); updateLiq(s);
             pInt = setInterval(() => updatePrice(s), 2000); 
             lInt = setInterval(() => updateLiq(s), 30000);
         }
 
-        function initChart() {
-            const container = document.getElementById('chart-container');
-            container.innerHTML = '';
-            chart = LightweightCharts.createChart(container, {
-                layout: { backgroundColor: '#000', textColor: '#888', fontSize: 11 },
-                grid: { vertLines: { color: '#111' }, horzLines: { color: '#111' } },
-                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-                rightPriceScale: { borderColor: '#222' },
-                timeScale: { borderColor: '#222', timeVisible: true, secondsVisible: false }
-            });
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#22c55e', downColor: '#ef4444', 
-                borderUpColor: '#22c55e', borderDownColor: '#ef4444',
-                wickUpColor: '#22c55e', wickDownColor: '#ef4444'
-            });
-            // جعل الشارت متجاوب
-            new ResizeObserver(() => {
-                chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-            }).observe(container);
-        }
-
-        async function loadChartData(s, tf) {
-            try {
-                const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${s}&interval=${tf}&limit=150`);
-                const data = await res.json();
-                const candles = data.map(d => ({
-                    time: d[0] / 1000,
-                    open: parseFloat(d[1]), high: parseFloat(d[2]),
-                    low: parseFloat(d[3]), close: parseFloat(d[4])
-                }));
-                candleSeries.setData(candles);
-            } catch (e) { console.log("Error loading candles"); }
-        }
-
-        function changeTF(tf, btn) {
-            currentTF = tf;
-            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            loadChartData(currentSymbol, tf);
-        }
-
         async function updatePrice(s) {
-            const res = await fetch(`https://fapi.binance.com/v1/ticker/price?symbol=${s}`);
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${s}`);
             const data = await res.json();
-            const price = parseFloat(data.price);
-            document.getElementById('coin-price').innerText = '$' + price.toLocaleString();
-            // تحديث الشمعة الأخيرة بالشارت حي
-            if(candleSeries) {
-                candleSeries.update({
-                    time: Math.floor(Date.now() / 1000),
-                    close: price
-                });
-            }
+            document.getElementById('coin-price').innerText = '$' + parseFloat(data.price).toLocaleString();
         }
 
         async function updateLiq(s) {
@@ -206,12 +150,7 @@
             render('s-walls', a); render('b-walls', b);
         }
 
-        function goBack() { 
-            clearInterval(pInt); 
-            clearInterval(lInt); 
-            document.getElementById('radar-ui').style.display = 'none';
-            document.getElementById('search-screen').style.display = 'block';
-        }
+        function goBack() { clearInterval(pInt); clearInterval(lInt); document.getElementById('radar-ui').style.display = 'none'; document.getElementById('search-screen').style.display = 'block'; }
     </script>
 </body>
 </html>
