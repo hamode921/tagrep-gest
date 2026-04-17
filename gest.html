@@ -2,21 +2,46 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>SEZAR-PHANTOM PRO ULTIMATE</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         
-        /* هذا السطر يخلي الصفحة تقبل التصغير لأي حجم */
-        html, body { 
-            touch-action: manipulation; 
-            overflow-x: auto;
-            -webkit-text-size-adjust: none;
+        /* ميزة التصغير البرمجية */
+        #zoom-container {
+            transition: transform 0.3s ease;
+            transform-origin: top center;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        /* أزرار التحكم بالحجم - تظهر فقط في الرادار */
+        .zoom-controls {
+            position: fixed;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 9999;
+        }
+        .zoom-btn {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        body { background: var(--bg); color: #fff; font-family: monospace; margin: 0; padding: 10px; overflow-x: hidden; }
         
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
         .secure-note { color: #888; font-size: 11px; margin-bottom: 15px; line-height: 1.6; }
@@ -34,7 +59,7 @@
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; position: relative; }
         .back-btn { position: absolute; left: 8px; top: 8px; background: var(--gold); color: #000; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
 
-        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #000; color: #00d2ff; }
+        .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
         
         #chart-container { width: 100%; height: 350px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; overflow: hidden; }
         #chart-frame { width: 100%; height: 100%; border: none; }
@@ -52,52 +77,61 @@
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
 
-        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
+        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 100; }
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
-        #error-msg { color: var(--red); font-size: 12px; margin-top: 10px; display: none; font-weight: bold; }
     </style>
 </head>
 <body onload="checkAuth()">
 
-    <div id="auth-screen" class="lock-box">
-        <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 تفعيل SEZAR-PHANTOM PRO</div>
-        <div class="secure-note">هذا الرمز يعمل على جهاز واحد فقط<br>ولا يعمل على جهاز غيره نهائياً</div>
-        <input type="password" id="pass-key" class="pass" placeholder="•••••">
-        <button onclick="activate()" class="login-btn">تسجيل دخول</button>
-        <div id="error-msg"></div>
-        <div style="display:flex; justify-content:space-around; margin-top:15px; border-top:1px solid #222; padding-top:10px;">
-            <a href="https://t.me/se44se" target="_blank" style="color:var(--gold); text-decoration:none; font-size:10px;">✈️ تليجرام</a>
-            <a href="mailto:sezarphantom@gmail.com" style="color:var(--gold); text-decoration:none; font-size:10px;">📧 الإيميل</a>
+    <div class="zoom-controls" id="zoomCtrl">
+        <button class="zoom-btn" onclick="setZoom(1.2)">+</button>
+        <button class="zoom-btn" onclick="setZoom(1.0)">1</button>
+        <button class="zoom-btn" onclick="setZoom(0.8)">-</button>
+        <button class="zoom-btn" onclick="setZoom(0.6)">--</button>
+    </div>
+
+    <div id="zoom-container">
+        <div id="auth-screen" class="lock-box">
+            <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 تفعيل SEZAR-PHANTOM PRO</div>
+            <div class="secure-note">هذا الرمز يعمل على جهاز واحد فقط<br>ولا يعمل على جهاز غيره نهائياً</div>
+            <input type="password" id="pass-key" class="pass" placeholder="•••••">
+            <button onclick="activate()" class="login-btn">تسجيل دخول</button>
+            <div id="error-msg" style="color:red; font-size:12px; margin-top:10px; display:none;"></div>
+            <div style="display:flex; justify-content:space-around; margin-top:15px; border-top:1px solid #222; padding-top:10px;">
+                <a href="https://t.me/se44se" target="_blank" style="color:var(--gold); text-decoration:none; font-size:10px;">✈️ تليجرام</a>
+                <a href="mailto:sezarphantom@gmail.com" style="color:var(--gold); text-decoration:none; font-size:10px;">📧 الإيميل</a>
+            </div>
+        </div>
+
+        <div id="search-screen">
+            <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
+            <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث (Spot & Futures)..." oninput="searchCoins()">
+            <div id="results-list"></div>
+        </div>
+
+        <div id="radar-ui">
+            <div class="header">
+                <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
+                <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
+                <p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p>
+            </div>
+            <div class="price-box" id="coin-price">Loading...</div>
+
+            <div id="chart-container">
+                <iframe id="chart-frame" src=""></iframe>
+            </div>
+
+            <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
+            <div id="buy-sell-per">BUY: --% | SELL: --%</div>
+            <div id="power-bar"></div>
+            <div id="s-walls"></div>
+            <div id="b-walls" style="margin-top:20px;"></div>
+            <div class="ice-card"><div style="font-size:11px; color:var(--ghost); display:flex; justify-content:space-between; font-weight:bold;"><span>ICEBERG DETECTOR (+50K)</span><span style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">ACTIVE</span></div><div id="iceberg-list"></div></div>
+            <div id="sig-box">ANALYZING...</div>
         </div>
     </div>
 
-    <div id="search-screen">
-        <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
-        <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث (Spot & Futures)..." oninput="searchCoins()">
-        <div id="results-list"></div>
-    </div>
-
-    <div id="radar-ui">
-        <div class="header">
-            <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
-            <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
-            <p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p>
-        </div>
-        <div class="price-box" id="coin-price">Loading...</div>
-
-        <div id="chart-container">
-            <iframe id="chart-frame" src=""></iframe>
-        </div>
-
-        <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
-        <div id="buy-sell-per">BUY: --% | SELL: --%</div>
-        <div id="power-bar"></div>
-        <div id="s-walls"></div>
-        <div id="b-walls" style="margin-top:20px;"></div>
-        <div class="ice-card"><div style="font-size:11px; color:var(--ghost); display:flex; justify-content:space-between; font-weight:bold;"><span>ICEBERG DETECTOR (+50K)</span><span style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">ACTIVE</span></div><div id="iceberg-list"></div></div>
-        <div id="sig-box">ANALYZING...</div>
-        <div class="contact-dev"><a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a><a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a></div>
-    </div>
+    <div class="contact-dev"><a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a><a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a></div>
 
     <script>
         const firebaseConfig = {
@@ -112,6 +146,12 @@
         const db = firebase.firestore();
 
         let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt;
+
+        // وظيفة التحكم بالزوم يدوياً
+        function setZoom(scale) {
+            document.getElementById('zoom-container').style.transform = `scale(${scale})`;
+            document.getElementById('zoom-container').style.width = (100 / scale) + '%';
+        }
 
         async function checkAuth() {
             const savedKey = localStorage.getItem('sz_ultimate_v1_key');
@@ -168,6 +208,8 @@
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('search-screen').style.display = 'block';
             document.getElementById('radar-ui').style.display = 'none';
+            document.getElementById('zoomCtrl').style.display = 'none';
+            setZoom(1.0);
             stopIntervals();
             if (allCoins.length === 0) {
                 const [spotRes, futRes] = await Promise.all([
@@ -206,6 +248,7 @@
             currentMode = mode;
             document.getElementById('search-screen').style.display = 'none';
             document.getElementById('radar-ui').style.display = 'block';
+            document.getElementById('zoomCtrl').style.display = 'flex';
             document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${mode.toUpperCase()}`;
             
             document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}&interval=1&theme=dark`;
