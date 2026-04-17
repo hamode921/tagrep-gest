@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>SEZAR-PHANTOM PRO ULTIMATE</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -28,7 +28,6 @@
 
         .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
         
-        /* إضافة ستايل الشارت */
         #chart-container { width: 100%; height: 350px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; overflow: hidden; }
         #chart-frame { width: 100%; height: 100%; border: none; }
 
@@ -201,7 +200,6 @@
             document.getElementById('radar-ui').style.display = 'block';
             document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${mode.toUpperCase()}`;
             
-            // إضافة الشارت لعملة الرادار
             document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}&interval=1&theme=dark`;
 
             stopIntervals();
