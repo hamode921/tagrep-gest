@@ -9,6 +9,15 @@
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         
+        /* تفعيل السحب الجانبي عند التصغير */
+        #zoom-wrapper {
+            width: 100vw;
+            overflow-x: auto; 
+            overflow-y: visible;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+
         #zoom-container {
             transition: transform 0.3s ease;
             transform-origin: top center;
@@ -20,27 +29,28 @@
 
         .zoom-controls {
             position: fixed;
-            right: 10px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
             display: none;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             z-index: 9999;
         }
         .zoom-btn {
-            background: rgba(251, 191, 36, 0.2);
-            border: 1px solid var(--gold);
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.5);
             color: var(--gold);
-            width: 45px;
-            height: 45px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 16px;
+            font-size: 14px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
 
         body { background: var(--bg); color: #fff; font-family: monospace; margin: 0; padding: 10px; overflow-x: hidden; }
@@ -54,14 +64,8 @@
         .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
         #chart-container { width: 100%; height: 350px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; overflow: hidden; }
         #chart-frame { width: 100%; height: 100%; border: none; }
-        .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
-        #buy-sell-per { text-align:center; font-weight:bold; margin-bottom:10px; font-size: 14px; }
-        #power-bar { text-align:center; margin-bottom:20px; display: flex; justify-content: center; gap: 4px; }
-        .ball { width: 12px; height: 12px; border-radius: 50%; }
         .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; font-weight: bold; }
-        .perc-tag { color: var(--gold); font-size: 10px; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; }
         .ice-card { background: var(--card); border: 1px solid var(--ghost); padding: 15px; border-radius: 12px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; }
         .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 100; }
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
     </style>
@@ -69,44 +73,46 @@
 <body onload="checkAuth()">
 
     <div class="zoom-controls" id="zoomCtrl">
-        <button class="zoom-btn" onclick="setZoom(1.2)">+</button>
+        <button class="zoom-btn" onclick="setZoom(1.1)">+</button>
         <button class="zoom-btn" onclick="setZoom(1.0)">🏠</button>
-        <button class="zoom-btn" onclick="setZoom(0.6)">--</button>
+        <button class="zoom-btn" onclick="setZoom(0.7)">-</button>
     </div>
 
-    <div id="zoom-container">
-        <div id="auth-screen" class="lock-box">
-            <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 تفعيل SEZAR-PHANTOM PRO</div>
-            <input type="password" id="pass-key" class="pass" placeholder="•••••">
-            <button onclick="activate()" class="login-btn">تسجيل دخول</button>
-            <div id="error-msg" style="color:red; font-size:12px; margin-top:10px; display:none;"></div>
-        </div>
-
-        <div id="search-screen">
-            <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
-            <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث..." oninput="searchCoins()">
-            <div id="results-list"></div>
-        </div>
-
-        <div id="radar-ui">
-            <div class="header">
-                <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
-                <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
-                <p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p>
-            </div>
-            <div class="price-box" id="coin-price">Loading...</div>
-
-            <div id="chart-container">
-                <iframe id="chart-frame" src=""></iframe>
+    <div id="zoom-wrapper">
+        <div id="zoom-container">
+            <div id="auth-screen" class="lock-box">
+                <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 تفعيل SEZAR-PHANTOM PRO</div>
+                <input type="password" id="pass-key" class="pass" placeholder="•••••">
+                <button onclick="activate()" class="login-btn">تسجيل دخول</button>
+                <div id="error-msg" style="color:red; font-size:12px; margin-top:10px; display:none;"></div>
             </div>
 
-            <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
-            <div id="buy-sell-per">BUY: --% | SELL: --%</div>
-            <div id="power-bar"></div>
-            <div id="s-walls"></div>
-            <div id="b-walls" style="margin-top:20px;"></div>
-            <div class="ice-card"><div style="font-size:11px; color:var(--ghost); display:flex; justify-content:space-between; font-weight:bold;"><span>ICEBERG DETECTOR (+50K)</span><span style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">ACTIVE</span></div><div id="iceberg-list"></div></div>
-            <div id="sig-box">ANALYZING...</div>
+            <div id="search-screen">
+                <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
+                <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث..." oninput="searchCoins()">
+                <div id="results-list"></div>
+            </div>
+
+            <div id="radar-ui">
+                <div class="header">
+                    <button class="back-btn" onclick="goBack()">🔙 رجوع</button>
+                    <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
+                    <p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p>
+                </div>
+                <div class="price-box" id="coin-price">Loading...</div>
+
+                <div id="chart-container">
+                    <iframe id="chart-frame" src=""></iframe>
+                </div>
+
+                <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
+                <div id="buy-sell-per">BUY: --% | SELL: --%</div>
+                <div id="power-bar"></div>
+                <div id="s-walls"></div>
+                <div id="b-walls" style="margin-top:20px;"></div>
+                <div class="ice-card"><div style="font-size:11px; color:var(--ghost); display:flex; justify-content:space-between; font-weight:bold;"><span>ICEBERG DETECTOR (+50K)</span><span style="background:#064e3b; color:#22c55e; padding:2px 5px; border-radius:3px;">ACTIVE</span></div><div id="iceberg-list"></div></div>
+                <div id="sig-box">ANALYZING...</div>
+            </div>
         </div>
     </div>
 
@@ -119,8 +125,9 @@
         let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt;
 
         function setZoom(scale) {
-            document.getElementById('zoom-container').style.transform = `scale(${scale})`;
-            document.getElementById('zoom-container').style.width = (100 / scale) + '%';
+            const container = document.getElementById('zoom-container');
+            container.style.transform = `scale(${scale})`;
+            container.style.width = (100 / scale) + '%';
         }
 
         async function checkAuth() {
@@ -195,8 +202,8 @@
             document.getElementById('zoomCtrl').style.display = 'flex';
             document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${mode.toUpperCase()}`;
             
-            // توحيد مصدر الشارت مع السعر المباشر (Binance Futures)
-            document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}${mode==='futures'?'PERP':''}&interval=1&theme=dark`;
+            // توحيد مصدر الشارت ليعطي نفس سعر بينانس فيوتشرز
+            document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}${mode==='futures'?'PERP':''}&interval=1&theme=dark&allow_symbol_change=true`;
 
             stopIntervals(); updatePrice(); updateLiquidity();
             pInt = setInterval(updatePrice, 1000); lInt = setInterval(updateLiquidity, 30000);
