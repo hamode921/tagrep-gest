@@ -9,20 +9,24 @@
     <style>
         :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; }
+        
+        /* شاشة الدخول */
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 280px; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; border-radius: 5px; font-size: 18px; outline: none; }
         button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; }
+
+        /* شاشة البحث والرادار */
         #search-screen, #radar-ui { display: none; width: 100%; max-width: 450px; text-align: center; }
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 15px; width: 90%; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 20px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .price-box { border: 1px dashed #444; padding: 10px; font-size: 30px; font-weight: bold; background: #050505; color: #00d2ff; margin-bottom: 10px; border-radius: 8px; }
+        .price-box { border: 1px dashed #444; padding: 10px; font-size: 32px; font-weight: bold; background: #050505; color: #00d2ff; margin-bottom: 5px; border-radius: 8px; }
         
-        /* شارت يدوي خفيف جداً */
-        #custom-chart { width: 100%; height: 150px; background: #050505; border: 1px solid #222; border-radius: 10px; position: relative; overflow: hidden; margin-bottom: 10px; }
-        .bar { position: absolute; bottom: 0; width: 4px; background: var(--gold); transition: height 0.3s; }
+        /* شارت الشموع اليدوي - مستحيل يوقف */
+        #custom-chart-box { width: 100%; height: 200px; background: #050505; border: 1px solid #222; border-radius: 10px; margin-bottom: 10px; position: relative; }
+        canvas { width: 100%; height: 100%; }
 
         .row { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #111; font-size: 12px; }
-        .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
+        .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 1000; }
         .contact-dev a { color: var(--gold); text-decoration: none; border: 1px solid var(--gold); padding: 8px 15px; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
@@ -36,7 +40,7 @@
 
     <div id="search-screen">
         <h2 style="color:var(--gold);">「 SEZAR-PHANTOM 」</h2>
-        <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث..." oninput="searchCoins()">
+        <input type="text" class="search-input" id="search-input" placeholder="🔍 ابحث عن عملة..." oninput="searchCoins()">
         <div id="results-list"></div>
     </div>
 
@@ -45,9 +49,11 @@
             <button onclick="goBack()" style="position:absolute; left:10px; top:12px; background:var(--gold); border:none; padding:5px 10px; border-radius:5px; font-size:12px; font-weight:bold;">🔙</button>
             <h3 id="current-coin-name" style="margin:0; color:var(--gold);">---</h3>
         </div>
-        <div class="price-box" id="coin-price">...</div>
+        <div class="price-box" id="coin-price">0.00</div>
         
-        <div id="custom-chart"></div>
+        <div id="custom-chart-box">
+            <canvas id="candleCanvas"></canvas>
+        </div>
 
         <div id="buy-sell-per" style="padding:10px; font-weight:bold; font-size:13px; color:#aaa;">BUY: --% | SELL: --%</div>
         <div id="s-walls"></div>
@@ -67,7 +73,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let allCoins = [], pInt, lInt, priceHistory = [];
+        let allCoins = [], pInt, lInt, candleData = [];
 
         async function checkSaved() {
             const k = localStorage.getItem('sz_key');
@@ -105,11 +111,16 @@
             });
         }
 
-        function startRadar(s) {
+        async function startRadar(s) {
             document.getElementById('search-screen').style.display = 'none';
             document.getElementById('radar-ui').style.display = 'block';
             document.getElementById('current-coin-name').innerText = s;
-            priceHistory = []; // تصفير الشارت
+            
+            // تحميل البيانات الأولية للشارت
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${s}&interval=1m&limit=40`);
+            const data = await res.json();
+            candleData = data.map(d => ({ o: parseFloat(d[1]), h: parseFloat(d[2]), l: parseFloat(d[3]), c: parseFloat(d[4]) }));
+
             updatePrice(s); updateLiq(s);
             pInt = setInterval(() => updatePrice(s), 2000); 
             lInt = setInterval(() => updateLiq(s), 30000);
@@ -121,28 +132,44 @@
             const price = parseFloat(data.price);
             document.getElementById('coin-price').innerText = '$' + price.toLocaleString();
             
-            // رسم الشارت اليدوي
-            priceHistory.push(price);
-            if(priceHistory.length > 50) priceHistory.shift();
-            drawChart();
+            // تحديث آخر شمعة
+            if(candleData.length > 0) {
+                candleData[candleData.length - 1].c = price;
+                drawCandles();
+            }
         }
 
-        function drawChart() {
-            const container = document.getElementById('custom-chart');
-            container.innerHTML = '';
-            const maxP = Math.max(...priceHistory);
-            const minP = Math.min(...priceHistory);
-            const range = maxP - minP || 1;
+        function drawCandles() {
+            const canvas = document.getElementById('candleCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
 
-            priceHistory.forEach((p, i) => {
-                const bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.style.left = (i * (container.clientWidth / 50)) + 'px';
-                const height = ((p - minP) / range) * 100;
-                bar.style.height = (height + 10) + '%'; // +10 حتى ما يختفي
-                if(i > 0 && priceHistory[i] > priceHistory[i-1]) bar.style.background = 'var(--green)';
-                else if(i > 0) bar.style.background = 'var(--red)';
-                container.appendChild(bar);
+            const maxP = Math.max(...candleData.map(d => d.h));
+            const minP = Math.min(...candleData.map(d => d.l));
+            const range = maxP - minP || 1;
+            const candleW = canvas.width / candleData.length;
+
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+
+            candleData.forEach((d, i) => {
+                const x = i * candleW + 2;
+                const yHigh = canvas.height - ((d.h - minP) / range) * canvas.height;
+                const yLow = canvas.height - ((d.l - minP) / range) * canvas.height;
+                const yOpen = canvas.height - ((d.o - minP) / range) * canvas.height;
+                const yClose = canvas.height - ((d.c - minP) / range) * canvas.height;
+
+                ctx.strokeStyle = d.c >= d.o ? '#22c55e' : '#ef4444';
+                ctx.fillStyle = d.c >= d.o ? '#22c55e' : '#ef4444';
+
+                // رسم الفتيلة
+                ctx.beginPath();
+                ctx.moveTo(x + candleW/4, yHigh);
+                ctx.lineTo(x + candleW/4, yLow);
+                ctx.stroke();
+
+                // رسم جسم الشمعة
+                ctx.fillRect(x, Math.min(yOpen, yClose), candleW/2, Math.abs(yOpen - yClose) + 1);
             });
         }
 
