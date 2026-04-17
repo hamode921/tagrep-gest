@@ -8,28 +8,30 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; --green: #22c55e; }
+        :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; }
         
-        /* الدخول */
+        /* شاشة الدخول */
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; outline: none; border-radius: 5px; font-size: 18px; }
         button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; }
 
-        /* البحث والرادار */
+        /* شاشة البحث والرادار */
         #search-screen, #radar-ui { display: none; width: 100%; max-width: 450px; text-align: center; }
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px; width: 95%; border-radius: 15px; font-size: 16px; outline: none; text-align: center; margin-bottom: 20px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 15px; border-radius: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         
-        /* حاوية الشارت */
-        #chart-container { width: 100%; height: 300px; margin-top: 10px; border: 1px solid #222; border-radius: 10px; overflow: hidden; }
-        .tf-btn { background: #111; color: #888; border: 1px solid #333; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 11px; margin: 0 2px; }
-        .tf-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+        /* أزرار الفريمات */
+        .tf-btn { background: #111; color: #888; border: 1px solid #333; padding: 6px 12px; cursor: pointer; border-radius: 5px; font-size: 12px; margin: 2px; transition: 0.3s; }
+        .tf-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: bold; }
 
-        .price-box { border: 1px dashed #555; padding: 10px; text-align: center; font-size: 28px; font-weight: 900; background: #0a0a0a; color: #00d2ff; margin: 10px 0; }
-        .row { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid #111; font-size: 12px; }
+        /* حاوية الشارت */
+        #chart-container { width: 100%; height: 320px; margin: 15px 0; border: 1px solid #222; border-radius: 12px; overflow: hidden; background: #000; }
+
+        .price-box { border: 1px dashed #555; padding: 12px; text-align: center; font-size: 30px; font-weight: 900; background: #0a0a0a; color: #00d2ff; margin-bottom: 10px; }
+        .row { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid #111; font-size: 13px; }
         .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 100; }
-        .contact-dev a { color: var(--gold); text-decoration: none; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-size: 11px; }
+        .contact-dev a { color: var(--gold); text-decoration: none; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-size: 12px; }
     </style>
 </head>
 <body onload="checkSaved()">
@@ -48,24 +50,24 @@
     </div>
 
     <div id="radar-ui">
-        <div style="border:1px solid var(--gold); padding:8px; border-radius:5px; position:relative; margin-bottom:10px;">
-            <button onclick="goBack()" style="position:absolute; left:8px; top:8px; background:var(--gold); border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">🔙</button>
-            <h3 id="current-coin-name" style="margin:0; color:var(--gold);">[ BTCUSDT ]</h3>
+        <div style="border:1px solid var(--gold); padding:10px; border-radius:8px; position:relative; margin-bottom:15px;">
+            <button onclick="goBack()" style="position:absolute; left:10px; top:10px; background:var(--gold); border:none; padding:5px 10px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer;">🔙</button>
+            <h3 id="current-coin-name" style="margin:0; color:var(--gold); letter-spacing: 1px;">[ BTCUSDT ]</h3>
         </div>
 
         <div class="price-box" id="coin-price">Loading...</div>
 
-        <div id="timeframes" style="margin-bottom:5px;">
+        <div id="timeframes">
             <button class="tf-btn active" onclick="changeTF('1m', this)">1m</button>
-            <button class="tf-btn" onclick="changeTF('5m', this)">5m</button>
             <button class="tf-btn" onclick="changeTF('15m', this)">15m</button>
             <button class="tf-btn" onclick="changeTF('1h', this)">1h</button>
+            <button class="tf-btn" onclick="changeTF('4h', this)">4h</button>
             <button class="tf-btn" onclick="changeTF('1d', this)">1d</button>
         </div>
 
         <div id="chart-container"></div>
 
-        <div id="buy-sell-per" style="text-align:center; padding:10px; font-weight:bold; font-size:12px;">BUY: --% | SELL: --%</div>
+        <div id="buy-sell-per" style="text-align:center; padding:10px; font-weight:bold; color: #bbb;">BUY: --% | SELL: --%</div>
         <div id="s-walls"></div>
         <div id="b-walls" style="margin-top:15px; margin-bottom:80px;"></div>
 
@@ -132,23 +134,22 @@
             document.getElementById('radar-ui').style.display = 'block';
             document.getElementById('current-coin-name').innerText = `[ ${s} ]`;
             
-            initChart(); // تهيئة الشارت
+            initChart();
             updatePrice(s); 
             updateLiq(s);
-            loadChartData(s, currentTF); // تحميل بيانات الشارت
+            loadChartData(s, currentTF);
 
             pInt = setInterval(() => updatePrice(s), 2000); 
             lInt = setInterval(() => updateLiq(s), 30000);
         }
 
-        // إعدادات الشارت الاحترافي
         function initChart() {
             const container = document.getElementById('chart-container');
             container.innerHTML = '';
             chart = LightweightCharts.createChart(container, {
-                layout: { backgroundColor: '#000', textColor: '#888', fontSize: 10 },
+                layout: { backgroundColor: '#000', textColor: '#aaa', fontSize: 11 },
                 grid: { vertLines: { color: '#111' }, horzLines: { color: '#111' } },
-                timeScale: { borderColor: '#222' },
+                timeScale: { borderColor: '#222', timeVisible: true },
                 rightPriceScale: { borderColor: '#222' }
             });
             candleSeries = chart.addCandlestickSeries({
@@ -159,7 +160,7 @@
         }
 
         async function loadChartData(s, tf) {
-            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${s}&interval=${tf}&limit=100`);
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${s}&interval=${tf}&limit=120`);
             const data = await res.json();
             const candles = data.map(d => ({
                 time: d[0] / 1000,
