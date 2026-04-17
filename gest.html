@@ -10,23 +10,20 @@
         :root { --gold: #fbbf24; --bg: #000; --red: #ef4444; --green: #22c55e; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; }
         
-        /* شاشة الدخول */
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 280px; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 90%; border-radius: 5px; font-size: 18px; outline: none; }
         button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; }
 
-        /* شاشة البحث والرادار */
         #search-screen, #radar-ui { display: none; width: 100%; max-width: 450px; text-align: center; }
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 15px; width: 90%; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 20px; }
         .coin-item { background: #080808; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .price-box { border: 1px dashed #444; padding: 10px; font-size: 32px; font-weight: bold; background: #050505; color: #00d2ff; margin-bottom: 5px; border-radius: 8px; }
         
-        /* شارت الشموع اليدوي - مستحيل يوقف */
-        #custom-chart-box { width: 100%; height: 200px; background: #050505; border: 1px solid #222; border-radius: 10px; margin-bottom: 10px; position: relative; }
+        #custom-chart-box { width: 100%; height: 200px; background: #050505; border: 1px solid #222; border-radius: 10px; margin-bottom: 10px; }
         canvas { width: 100%; height: 100%; }
 
         .row { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #111; font-size: 12px; }
-        .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 1000; }
+        .contact-dev { position: fixed; bottom: 0; width: 100%; background: #000; padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; }
         .contact-dev a { color: var(--gold); text-decoration: none; border: 1px solid var(--gold); padding: 8px 15px; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
@@ -36,6 +33,7 @@
         <div style="color:var(--gold); font-weight:bold; margin-bottom:20px;">🔒 SEZAR-PHANTOM PRO</div>
         <input type="password" id="pass-key" class="pass" placeholder="كود التفعيل">
         <button onclick="activate()" class="login-btn">دخول</button>
+        <div id="error-msg" style="color:red; font-size:11px; margin-top:10px; display:none;">❌ الكود خطأ</div>
     </div>
 
     <div id="search-screen">
@@ -79,14 +77,23 @@
             const k = localStorage.getItem('sz_key');
             if (k) {
                 const doc = await db.collection("users").doc(k).get();
-                if (doc.exists) showSearch();
+                if (doc.exists) { showSearch(); }
+                else { localStorage.clear(); }
+            } else {
+                document.getElementById('auth-screen').style.display = 'block';
             }
         }
 
         async function activate() { 
             const k = document.getElementById('pass-key').value;
+            if(!k) return;
             const doc = await db.collection("users").doc(k).get();
-            if (doc.exists) { localStorage.setItem('sz_key', k); showSearch(); }
+            if (doc.exists) { 
+                localStorage.setItem('sz_key', k); 
+                showSearch(); 
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
         }
 
         async function showSearch() {
@@ -94,9 +101,11 @@
             document.getElementById('search-screen').style.display = 'block';
             document.getElementById('radar-ui').style.display = 'none';
             if (allCoins.length === 0) {
-                const r = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
-                const d = await r.json();
-                allCoins = d.symbols.filter(s => s.symbol.endsWith('USDT')).map(s => s.symbol);
+                try {
+                    const r = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
+                    const d = await r.json();
+                    allCoins = d.symbols.filter(s => s.symbol.endsWith('USDT')).map(s => s.symbol);
+                } catch(e) { console.log("API Error"); }
             }
         }
 
@@ -116,7 +125,6 @@
             document.getElementById('radar-ui').style.display = 'block';
             document.getElementById('current-coin-name').innerText = s;
             
-            // تحميل البيانات الأولية للشارت
             const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${s}&interval=1m&limit=40`);
             const data = await res.json();
             candleData = data.map(d => ({ o: parseFloat(d[1]), h: parseFloat(d[2]), l: parseFloat(d[3]), c: parseFloat(d[4]) }));
@@ -127,16 +135,16 @@
         }
 
         async function updatePrice(s) {
-            const res = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${s}`);
-            const data = await res.json();
-            const price = parseFloat(data.price);
-            document.getElementById('coin-price').innerText = '$' + price.toLocaleString();
-            
-            // تحديث آخر شمعة
-            if(candleData.length > 0) {
-                candleData[candleData.length - 1].c = price;
-                drawCandles();
-            }
+            try {
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${s}`);
+                const data = await res.json();
+                const price = parseFloat(data.price);
+                document.getElementById('coin-price').innerText = '$' + price.toLocaleString();
+                if(candleData.length > 0) {
+                    candleData[candleData.length - 1].c = price;
+                    drawCandles();
+                }
+            } catch(e) {}
         }
 
         function drawCandles() {
@@ -144,50 +152,49 @@
             const ctx = canvas.getContext('2d');
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
-
             const maxP = Math.max(...candleData.map(d => d.h));
             const minP = Math.min(...candleData.map(d => d.l));
             const range = maxP - minP || 1;
             const candleW = canvas.width / candleData.length;
-
             ctx.clearRect(0,0, canvas.width, canvas.height);
-
             candleData.forEach((d, i) => {
                 const x = i * candleW + 2;
                 const yHigh = canvas.height - ((d.h - minP) / range) * canvas.height;
                 const yLow = canvas.height - ((d.l - minP) / range) * canvas.height;
                 const yOpen = canvas.height - ((d.o - minP) / range) * canvas.height;
                 const yClose = canvas.height - ((d.c - minP) / range) * canvas.height;
-
                 ctx.strokeStyle = d.c >= d.o ? '#22c55e' : '#ef4444';
                 ctx.fillStyle = d.c >= d.o ? '#22c55e' : '#ef4444';
-
-                // رسم الفتيلة
                 ctx.beginPath();
                 ctx.moveTo(x + candleW/4, yHigh);
                 ctx.lineTo(x + candleW/4, yLow);
                 ctx.stroke();
-
-                // رسم جسم الشمعة
                 ctx.fillRect(x, Math.min(yOpen, yClose), candleW/2, Math.abs(yOpen - yClose) + 1);
             });
         }
 
         async function updateLiq(s) {
-            const res = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${s}&limit=500`);
-            const data = await res.json();
-            let b = data.bids.map(x => ({p: x[0], v: x[0]*x[1]})), a = data.asks.map(x => ({p: x[0], v: x[0]*x[1]}));
-            let tB = b.reduce((s,x)=>s+x.v,0), tS = a.reduce((s,x)=>s+x.v,0);
-            document.getElementById('buy-sell-per').innerText = `BUY: ${(tB/(tB+tS)*100).toFixed(1)}% | SELL: ${(tS/(tB+tS)*100).toFixed(1)}%`;
-            const render = (target, list) => {
-                document.getElementById(target).innerHTML = list.sort((x,y)=>y.v-x.v).slice(0,3).map(x => `
-                    <div class="row"><span>Vol: ${(x.v/1000000).toFixed(2)}M</span><span>$${parseFloat(x.p).toLocaleString()}</span></div>
-                `).join('');
-            };
-            render('s-walls', a); render('b-walls', b);
+            try {
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${s}&limit=500`);
+                const data = await res.json();
+                let b = data.bids.map(x => ({p: x[0], v: x[0]*x[1]})), a = data.asks.map(x => ({p: x[0], v: x[0]*x[1]}));
+                let tB = b.reduce((s,x)=>s+x.v,0), tS = a.reduce((s,x)=>s+x.v,0);
+                document.getElementById('buy-sell-per').innerText = `BUY: ${(tB/(tB+tS)*100).toFixed(1)}% | SELL: ${(tS/(tB+tS)*100).toFixed(1)}%`;
+                const render = (target, list) => {
+                    document.getElementById(target).innerHTML = list.sort((x,y)=>y.v-x.v).slice(0,3).map(x => `
+                        <div class="row"><span>Vol: ${(x.v/1000000).toFixed(2)}M</span><span>$${parseFloat(x.p).toLocaleString()}</span></div>
+                    `).join('');
+                };
+                render('s-walls', a); render('b-walls', b);
+            } catch(e) {}
         }
 
-        function goBack() { clearInterval(pInt); clearInterval(lInt); document.getElementById('radar-ui').style.display = 'none'; document.getElementById('search-screen').style.display = 'block'; }
+        function goBack() { 
+            clearInterval(pInt); 
+            clearInterval(lInt); 
+            document.getElementById('radar-ui').style.display = 'none'; 
+            document.getElementById('search-screen').style.display = 'block'; 
+        }
     </script>
 </body>
 </html>
