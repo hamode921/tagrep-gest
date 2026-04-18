@@ -98,7 +98,6 @@
     function drawWallLine(wall, type) { 
         const line = document.getElementById(type + '-wall-line'), volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol'); 
         if (!wall || !currentPrice) return; 
-        // معادلة محسنة: ربط الخط بنسبة مئوية أدق بالنسبة لمركز الشاشة (175px)
         let diff = ((wall.p - currentPrice) / currentPrice) * 500; 
         let pos = 175 - diff; 
         if (pos > -10 && pos < 360) { line.style.display = 'block'; line.style.top = pos + 'px'; volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M'; } 
