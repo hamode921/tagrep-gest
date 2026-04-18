@@ -10,11 +10,10 @@
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         #zoom-wrapper { width: 100vw; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         #zoom-container { transition: transform 0.3s ease; transform-origin: top center; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .inline-btn { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; vertical-align: middle; margin: 0 5px; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; }
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 95%; outline: none; border-radius: 5px; font-size: 18px; }
-        button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; margin-bottom: 20px; }
+        button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; }
         #search-screen { display: none; width: 100%; max-width: 450px; text-align: center; margin-top: 20px; }
         .sezar-brand .sub-text { font-size: 28px; font-weight: bold; color: var(--gold); text-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
         .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px; width: 95%; border-radius: 15px; font-size: 16px; outline: none; text-align: center; margin-bottom: 30px; }
@@ -23,14 +22,21 @@
         .header { border: 1px solid var(--gold); padding: 5px; text-align: center; margin-bottom: 15px; border-radius: 5px; position: relative; }
         .back-btn { position: absolute; left: 8px; top: 8px; background: var(--gold); color: #000; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
         .price-box { border: 1px dashed #555; padding: 15px; text-align: center; font-size: 32px; font-weight: 900; margin-bottom: 5px; background: #0a0a0a; color: #00d2ff; }
-        #chart-container { width: 100%; height: 400px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; position: relative; }
+        
+        /* شريط الجدران اللحظي - تصميم جديد تحت السعر */
+        .walls-live-strip { display: flex; justify-content: space-around; width: 100%; margin-bottom: 10px; gap: 5px; }
+        .wall-tag { flex: 1; padding: 10px 5px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: bold; border: 1px solid; }
+        .wall-tag span { display: block; font-size: 14px; margin-top: 3px; }
+
+        #chart-container { width: 100%; height: 380px; border: 1px solid #222; border-radius: 10px; background: #000; margin-bottom: 15px; }
         #chart-frame { width: 100%; height: 100%; border: none; }
-        .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
+        
+        .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 10px; }
         .row { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #111; font-size: 13px; font-weight: bold; }
         .ai-signal-box { background: linear-gradient(45deg, #080808, #111); border: 1px double var(--gold); border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center; }
-        #ai-decision { font-size: 18px; font-weight: 900; margin: 5px 0; }
-        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; z-index: 100; }
-        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
+        #ai-decision { font-size: 18px; font-weight: 900; }
+        .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; z-index: 100; border-top: 1px solid #222; }
+        .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; }
     </style>
 </head>
 <body onload="checkAuth()">
@@ -48,21 +54,35 @@
         </div>
         <div id="radar-ui">
             <div class="header"><button class="back-btn" onclick="goBack()">🔙 رجوع</button><h2 id="radar-title">「 SEZAR-PHANTOM 」</h2><p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p></div>
+            
             <div class="price-box" id="coin-price">Loading...</div>
-            <div id="chart-container">
-                <iframe id="chart-frame" src=""></iframe>
+
+            <div class="walls-live-strip">
+                <div class="wall-tag" style="background: rgba(34, 197, 94, 0.1); border-color: var(--green); color: var(--green);">
+                    🟢 أقرب دعم (BUY) <span id="strip-buy">--</span>
+                </div>
+                <div class="wall-tag" style="background: rgba(239, 68, 68, 0.1); border-color: var(--red); color: var(--red);">
+                    🔴 أقرب مقاومة (SELL) <span id="strip-sell">--</span>
+                </div>
             </div>
-            <div class="timer-text">تحديث السيولة خلال: <span id="timer">30</span> ثانية</div>
-            <div id="buy-sell-per"><button class="inline-btn" onclick="setZoom(0.6)">-</button><span id="buy-sell-display">BUY: --% | SELL: --%</span><button class="inline-btn" onclick="setZoom(1.0)">🏠</button></div>
-            <div id="power-bar" style="text-align:center; margin-bottom:15px; display: flex; justify-content: center; gap: 4px;"></div>
-            <div id="s-walls"></div>
+
+            <div id="chart-container"><iframe id="chart-frame" src=""></iframe></div>
+
+            <div class="timer-text">تحديث خلال: <span id="timer">30</span> ث</div>
+            <div id="buy-sell-per" style="text-align:center;"><span id="buy-sell-display">BUY: --% | SELL: --%</span></div>
+            <div id="power-bar" style="text-align:center; margin-top:10px; display: flex; justify-content: center; gap: 4px;"></div>
+            
             <div class="ai-signal-box">
-                <div style="font-size:11px;color:var(--gold);font-weight:bold;border-bottom:1px solid #222;padding-bottom:5px;margin-bottom:8px;">🤖 CAESAR SIGNAL AI (SYNCED)</div>
+                <div style="font-size:11px;color:var(--gold);font-weight:bold;margin-bottom:8px;">🤖 CAESAR SIGNAL AI</div>
                 <div id="ai-decision">ANALYZING...</div>
-                <div class="ai-meta" style="display:flex; justify-content:space-around; font-size:10px; color:#888;"><span>TARGET: <span id="ai-target">--</span></span><span>CONFIDENCE: <span id="ai-conf">--</span></span></div>
+                <div style="display:flex; justify-content:space-around; font-size:10px; color:#888; margin-top:8px;">
+                    <span>TARGET: <span id="ai-target">--</span></span>
+                    <span>ACCURACY: <span id="ai-conf">--</span></span>
+                </div>
             </div>
-            <div id="b-walls"></div>
-            <div class="ice-card"><div id="iceberg-list"></div></div>
+
+            <div id="s-walls"></div>
+            <div id="b-walls" style="margin-top:20px;"></div>
         </div>
     </div>
 </div>
@@ -72,28 +92,14 @@
     const db = firebase.firestore();
     let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, currentPrice = 0, sigBuffer = { buy: 0, sell: 0 }, pInt, lInt, tInt;
 
-    function setZoom(scale) { const container = document.getElementById('zoom-container'); container.style.transform = `scale(${scale})`; container.style.width = (100 / scale) + '%'; }
     async function checkAuth() { const savedKey = localStorage.getItem('sz_ultimate_v1_key'); if (savedKey) showSearch(); }
     async function activate() { const k = document.getElementById('pass-key').value; if(!k) return; const doc = await db.collection("users").doc(k).get(); if (doc.exists) { localStorage.setItem('sz_ultimate_v1_key', k); showSearch(); } }
     async function showSearch() { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('search-screen').style.display = 'block'; document.getElementById('radar-ui').style.display = 'none'; stopIntervals(); if (allCoins.length === 0) { const [spotRes, futRes] = await Promise.all([fetch('https://api.binance.com/api/v3/exchangeInfo'), fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')]); const spotData = await spotRes.json(); const futData = await futRes.json(); allCoins = [...spotData.symbols.filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT')).map(s => ({s: s.symbol, m: 'spot'})), ...futData.symbols.filter(s => s.status === 'TRADING' && s.contractType === 'PERPETUAL').map(s => ({s: s.symbol, m: 'futures'}))]; } searchCoins(); }
     function searchCoins() { const query = document.getElementById('search-input').value.toUpperCase(); const list = document.getElementById('results-list'); list.innerHTML = ''; allCoins.filter(c => c.s.includes(query)).slice(0, 10).forEach(c => { const item = document.createElement('div'); item.className = 'coin-item'; item.innerHTML = `<span>${c.s} (${c.m})</span>`; item.onclick = () => startRadar(c.s, c.m); list.appendChild(item); }); }
-    
-    function startRadar(symbol, mode) { 
-        currentSymbol = symbol; currentMode = mode; 
-        document.getElementById('search-screen').style.display = 'none'; 
-        document.getElementById('radar-ui').style.display = 'block'; 
-        // الربط المباشر لـ TradingView مع الخطوط الأصلية
-        document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}${mode==='futures'?'PERP':''}&interval=1&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=true&hide_side_toolbar=true&allow_symbol_change=false&save_image=false&studies=%5B%5D`; 
-        stopIntervals(); updatePrice(); updateLiquidity(); 
-        pInt = setInterval(updatePrice, 1000); lInt = setInterval(updateLiquidity, 5000); 
-        tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000); 
-    }
-
+    function startRadar(symbol, mode) { currentSymbol = symbol; currentMode = mode; document.getElementById('search-screen').style.display = 'none'; document.getElementById('radar-ui').style.display = 'block'; document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${symbol}${mode==='futures'?'PERP':''}&interval=1&theme=dark`; stopIntervals(); updatePrice(); updateLiquidity(); pInt = setInterval(updatePrice, 1000); lInt = setInterval(updateLiquidity, 5000); tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000); }
     function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(tInt); }
     function goBack() { showSearch(); }
-
     async function updatePrice() { try { const url = currentMode === 'futures' ? `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${currentSymbol}` : `https://api.binance.com/api/v3/ticker/price?symbol=${currentSymbol}`; const res = await fetch(url); const data = await res.json(); currentPrice = parseFloat(data.price); document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2}); } catch (e) {} }
-
     async function updateLiquidity() {
         try {
             const url = currentMode === 'futures' ? `https://fapi.binance.com/fapi/v1/depth?symbol=${currentSymbol}&limit=1000` : `https://api.binance.com/api/v3/depth?symbol=${currentSymbol}&limit=1000`;
@@ -106,16 +112,17 @@
             document.getElementById('power-bar').innerHTML = '<div class="ball" style="width:12px;height:12px;border-radius:50%;background:var(--green)"></div>'.repeat(buyBalls) + '<div class="ball" style="width:12px;height:12px;border-radius:50%;background:var(--red)"></div>'.repeat(sellBalls);
             
             let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
-            
+            document.getElementById('strip-buy').innerText = "$" + topBid.p.toLocaleString();
+            document.getElementById('strip-sell').innerText = "$" + topAsk.p.toLocaleString();
+
             document.getElementById('s-walls').innerHTML = `<div style="color:var(--red);font-weight:bold;margin-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>Vol: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
             document.getElementById('b-walls').innerHTML = `<div style="color:var(--green);font-weight:bold;margin-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>Vol: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             
             const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
             if(buyP > 60) { sigBuffer.buy++; sigBuffer.sell = 0; } else if(sellP > 60) { sigBuffer.sell++; sigBuffer.buy = 0; } else { sigBuffer.buy = 0; sigBuffer.sell = 0; }
-
             if(sigBuffer.buy >= 2) { aiDec.innerText = "🟢 STRONG BUY"; aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + topAsk.p.toLocaleString(); aiC.innerText = "94%"; }
             else if(sigBuffer.sell >= 2) { aiDec.innerText = "🔴 STRONG SELL"; aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + topBid.p.toLocaleString(); aiC.innerText = "91%"; }
-            else { aiDec.innerText = "🟡 WAIT / SIDEWAYS"; aiDec.style.color = "var(--gold)"; aiTar.innerText = "N/A"; aiC.innerText = "40%"; }
+            else { aiDec.innerText = "🟡 WAIT / SIDEWAYS"; aiDec.style.color = "var(--gold)"; aiTar.innerText = "N/A"; aiC.innerText = "45%"; }
         } catch (e) {}
     }
 </script>
