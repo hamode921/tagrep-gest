@@ -9,10 +9,8 @@
     <style>
         :root { --gold: #fbbf24; --ghost: #a855f7; --bg: #000; --card: #080808; --red: #ef4444; --green: #22c55e; }
         
-        /* إضافة ميزة السحب الجانبي عند التصغير دون تغيير الستايل */
         #zoom-wrapper { width: 100vw; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-        /* حاوية الزوم البرمجية */
         #zoom-container {
             transition: transform 0.3s ease;
             transform-origin: top center;
@@ -22,7 +20,6 @@
             align-items: center;
         }
 
-        /* ستايل الأزرار الصغيرة بجانب الكلمات */
         .inline-btn {
             background: rgba(251, 191, 36, 0.1);
             border: 1px solid var(--gold);
@@ -58,22 +55,13 @@
         #chart-container { width: 100%; height: 350px; border: 1px solid #222; border-radius: 10px; background: #000; margin: 15px 0; overflow: hidden; position: relative; }
         #chart-frame { width: 100%; height: 100%; border: none; }
 
-        /* ميزة خطوط الجدران على الشارت */
         .chart-wall-line { position: absolute; left: 0; width: 100%; height: 2px; z-index: 10; pointer-events: none; transition: top 0.3s ease; }
         
-        /* تعديل مكان الملصق ليكون خلف السعر قليلاً */
-        .wall-label { 
-            position: absolute; 
-            right: 80px; 
-            top: -18px; 
-            font-size: 9px; 
-            font-weight: bold; 
-            padding: 2px 5px; 
-            border-radius: 3px; 
-            background: rgba(0,0,0,0.85); 
-            border: 1px solid currentColor; 
-            white-space: nowrap;
-        }
+        /* SELL يبقى فوق الخط */
+        #sell-wall-line .wall-label { position: absolute; right: 5px; top: -18px; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 3px; background: rgba(0,0,0,0.8); border: 1px solid currentColor; }
+        
+        /* BUY ينزل تحت الخط */
+        #buy-wall-line .wall-label { position: absolute; right: 5px; top: 2px; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 3px; background: rgba(0,0,0,0.8); border: 1px solid currentColor; }
 
         .timer-text { text-align:center; font-size:10px; color: var(--gold); margin-bottom: 12px; font-weight: bold; }
         #buy-sell-per { text-align:center; font-weight:bold; margin-bottom:10px; font-size: 14px; }
@@ -291,7 +279,6 @@
             const line = document.getElementById(type + '-wall-line'), volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
             if (!wall || !currentPrice) return;
             
-            // معادلة ثابتة لربط الخط بالسعر
             let range = currentPrice * 0.005; 
             let diff = wall.p - currentPrice;
             let pos = 175 - (diff / range) * 175;
