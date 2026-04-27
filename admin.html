@@ -2,32 +2,45 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SEZAR لوحة التحكم</title>
+    <title>SEZAR لوحة التحكم - نظام الباقات</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         body { background: #0b0b0b; color: #ffcc00; font-family: sans-serif; text-align: center; padding: 20px; }
-        .box { border: 2px solid #ffcc00; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; background: #1a1a1a; }
-        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ffcc00; background: #000; color: #fff; }
-        button { width: 95%; padding: 12px; background: #ffcc00; color: #000; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+        .box { border: 2px solid #ffcc00; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; background: #1a1a1a; box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); }
+        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ffcc00; background: #000; color: #fff; outline: none; }
+        button { width: 95%; padding: 12px; background: #ffcc00; color: #000; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #e6b800; }
+        label { display: block; text-align: right; margin-right: 20px; font-size: 12px; color: #aaa; }
     </style>
 </head>
 <body>
     <div class="box">
         <h3>إضافة مشترك جديد (نظام سيزو)</h3>
+        
         <input type="text" id="userName" placeholder="اسم المشترك">
         <input type="text" id="userKey" placeholder="كود التفعيل">
+        
+        <label>اختر باقة المشترك:</label>
+        <select id="userRank">
+            <option value="silver">🥈 الباقة الفضية (البحث والقناص)</option>
+            <option value="gold">🥇 الباقة الذهبية (ألفا + الحيتان)</option>
+            <option value="diamond">💎 الباقة الماسية (الوصول الكامل)</option>
+        </select>
+
+        <label>مدة الاشتراك:</label>
         <select id="duration">
             <option value="7">أسبوع واحد</option>
             <option value="30">شهر كامل</option>
+            <option value="90">3 أشهر</option>
             <option value="365">سنة كاملة</option>
         </select>
+
         <button onclick="addUser()">تفعيل المشترك +</button>
         <p id="msg"></p>
     </div>
 
     <script>
-        // إعدادات مشروع سيزو من الصور
         const firebaseConfig = {
             apiKey: "AIzaSyAzEZksgZMPbY79K_TM3mHKeW1shQ6V-lY",
             authDomain: "sezar-phantom-auth.firebaseapp.com",
@@ -42,21 +55,33 @@
         function addUser() {
             const name = document.getElementById('userName').value;
             const key = document.getElementById('userKey').value;
+            const rank = document.getElementById('userRank').value; // جلب نوع الباقة
             const days = parseInt(document.getElementById('duration').value);
             const msg = document.getElementById('msg');
+
+            if(!name || !key) {
+                msg.style.color = "red";
+                msg.innerText = "❌ يرجى ملء كافة الحقول!";
+                return;
+            }
 
             let expiry = new Date();
             expiry.setDate(expiry.getDate() + days);
 
+            // إرسال البيانات مع حقل الـ rank الجديد
             db.collection("users").doc(key).set({
                 name: name,
                 key: key,
-                expiry: expiry.toISOString().split('T')[0],
+                rank: rank, // تخزين الباقة (silver, gold, diamond)
+                expiryDate: expiry.toISOString(), // حفظ التاريخ بصيغة كاملة للتحقق الأدق
                 active: true,
-                deviceId: null
+                deviceId: "" // يترك فارغاً ليرتبط بأول جهاز
             }).then(() => {
                 msg.style.color = "lime";
-                msg.innerText = "✅ تم الإرسال للخزنة بنجاح!";
+                msg.innerText = "✅ تم تفعيل باقة [" + rank.toUpperCase() + "] بنجاح!";
+                // مسح الحقول بعد النجاح
+                document.getElementById('userName').value = "";
+                document.getElementById('userKey').value = "";
             }).catch((e) => {
                 msg.style.color = "red";
                 msg.innerText = "❌ فشل: " + e.message;
