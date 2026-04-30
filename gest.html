@@ -70,7 +70,6 @@
         @keyframes blink-gold { 0% { border-color: var(--gold); box-shadow: 0 0 12px var(--gold); } 50% { border-color: #555; box-shadow: none; } 100% { border-color: var(--gold); box-shadow: 0 0 12px var(--gold); } }
         .blink-border { animation: blink-gold 0.6s infinite; border-width: 2px !important; }
 
-        /* --- ستايل الرسالة الاحترافية (جراحي) --- */
         #custom-alert {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;
@@ -248,7 +247,7 @@
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // دالة لاستخراج بصمة الجهاز (Hardware Identifier البديل للمتصفح)
+    // 1. دالة توليد بصمة المتصفح الفريدة
     function getDeviceFingerprint() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -463,7 +462,7 @@
         } catch (e) {}
     }
 
-    // تعديل دالة التحقق لتشمل بصمة الجهاز
+    // 2. تعديل دالة التحقق لتشمل بصمة الجهاز
     async function checkAuth() {
         const key = localStorage.getItem('sz_ultimate_v1_key');
         if (key) {
@@ -472,10 +471,10 @@
                 const data = doc.data();
                 const deviceID = getDeviceFingerprint();
                 
-                // إذا كان المفتاح مسجل ببصمة مختلفة عن جهاز الحالي
-                if (data.deviceID && data.deviceID !== deviceID) {
+                // إذا كان المفتاح مسجل ببصمة مختلفة عن جهاز الحالي، يتم طرد المستخدم
+                if (data.deviceId && data.deviceId !== deviceID) {
                     localStorage.removeItem('sz_ultimate_v1_key');
-                    showAlert("🔒 خطأ في الترخيص", "هذا المفتاح مفعل مسبقاً على جهاز آخر!<br>لا يمكنك استخدامه على أكثر من جهاز.");
+                    showAlert("🔒 خطأ في الترخيص", "هذا المفتاح مفعل مسبقاً على جهاز آخر!<br>يرجى التواصل مع الإدارة.");
                     return;
                 }
                 
@@ -485,7 +484,7 @@
         }
     }
 
-    // تعديل دالة التفعيل لربط المفتاح بالجهاز عند أول دخول
+    // 3. تعديل دالة التفعيل لربط المفتاح بالجهاز وحفظ البصمة
     async function activate() { 
         const k = document.getElementById('pass-key').value;
         if(!k) return;
@@ -493,32 +492,34 @@
         errorMsg.style.display = 'none';
 
         try {
-            const doc = await db.collection("users").doc(k).get();
+            const userRef = db.collection("users").doc(k);
+            const doc = await userRef.get();
+            
             if (doc.exists) { 
                 const data = doc.data();
                 const deviceID = getDeviceFingerprint();
 
-                // التحقق مما إذا كان المفتاح مرتبطاً بجهاز آخر
-                if (data.deviceID && data.deviceID !== deviceID) {
+                // التحقق إذا كان المفتاح مرتبطاً بجهاز آخر
+                if (data.deviceId && data.deviceId !== deviceID) {
                     errorMsg.innerText = "❌ هذا الرمز مفعل على جهاز آخر!";
                     errorMsg.style.display = 'block';
                     return;
                 }
 
-                // إذا كان المفتاح جديداً (بدون deviceID)، نربطه بالجهاز الحالي
-                if (!data.deviceID) {
-                    await db.collection("users").doc(k).update({ deviceID: deviceID });
+                // إذا كان الحقل فارغاً، نربطه بالجهاز الحالي (دمج البيانات لعدم الحذف)
+                if (!data.deviceId) {
+                    await userRef.set({ deviceId: deviceID }, { merge: true });
                 }
 
                 userTier = data.tier || data.rank || 'silver';
                 localStorage.setItem('sz_ultimate_v1_key', k);
                 showSearch(); 
             } else {
-                errorMsg.innerText = "❌ الرمز غير صحيح!";
+                errorMsg.innerText = "❌ الرمز غير موجود أو غير صحيح!";
                 errorMsg.style.display = 'block';
             }
         } catch (e) {
-            errorMsg.innerText = "❌ حدث خطأ في الاتصال!";
+            errorMsg.innerText = "❌ فشل الاتصال بقاعدة البيانات!";
             errorMsg.style.display = 'block';
         }
     }
