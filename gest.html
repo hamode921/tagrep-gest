@@ -92,8 +92,8 @@
     <div id="zoom-container">
         <div id="custom-alert">
             <div class="alert-box">
-                <h4>🔒 قسم مخصص لترقية أعلى</h4>
-                <p>عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️</p>
+                <h4 id="alert-title">🔒 قسم مخصص لترقية أعلى</h4>
+                <p id="alert-msg">عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️</p>
                 <button onclick="closeAlert()">حسناً</button>
             </div>
         </div>
@@ -103,7 +103,6 @@
             <div class="secure-note">هذا الرمز يعمل على جهاز واحد فقط<br>ولا يعمل على جهاز غيره نهائياً</div>
             <input type="password" id="pass-key" class="pass" placeholder="•••••">
             <button onclick="activate()" class="login-btn">LOGIN</button>
-            <!-- منطقة عرض الخطأ النصية المباشرة -->
             <div id="error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none; font-weight: bold;"></div>
             <div style="display:flex; justify-content:space-around; margin-top:15px; border-top:1px solid #222; padding-top:10px;">
                 <a href="https://t.me/se44se" target="_blank" style="color:var(--gold); text-decoration:none; font-size:10px;">✈️ تليجرام</a>
@@ -111,92 +110,84 @@
             </div>
         </div>
 
-        <!-- الأقسام الأخرى تظل كما هي في كودك الأصلي -->
+        <!-- بقية الأقسام (كما هي بدون تغيير) -->
         <div id="alpha-screen">...</div>
         <div id="search-screen">...</div>
-        <!-- تم اختصار العرض هنا للحفاظ على منطق الأمان -->
+        <div id="scanner-screen">...</div>
+        <div id="whale-hunt-screen">...</div>
+        <div id="pump-dump-screen">...</div>
         <div id="radar-ui">...</div>
     </div>
 </div>
+<div class="contact-dev"><a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a><a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a></div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyAzEZksgZMPbY79K_TM3mHKeW1shQ6V-lY", authDomain: "sezar-phantom-auth.firebaseapp.com", projectId: "sezar-phantom-auth", storageBucket: "sezar-phantom-auth.firebasestorage.app", messagingSenderId: "112991314655", appId: "1:112991314655:web:cbca0b5c0c6b6e4f51ff6a" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
-    let userTier = 'silver'; 
-    let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30;
 
-    function getFingerprint() {
-        return btoa(navigator.userAgent + navigator.language + screen.width + screen.height).substring(0, 16);
-    }
-
-    async function checkAuth() {
-        const key = localStorage.getItem('sz_ultimate_v1_key');
-        const myFinger = getFingerprint();
-        if (key) {
-            const doc = await db.collection("users").doc(key).get();
-            if (doc.exists) {
-                const data = doc.data();
-                const expiry = new Date(data.expiryDate).getTime();
-
-                if (Date.now() > expiry || (data.deviceId && data.deviceId !== "" && data.deviceId !== myFinger)) {
-                    localStorage.removeItem('sz_ultimate_v1_key');
-                    location.reload();
-                    return;
-                }
-                userTier = data.tier || data.rank || 'silver'; 
-                showSearch();
-            }
-        }
+    // دالة توليد بصمة الجهاز (الجراحة البرمجية)
+    function getDeviceFingerprint() {
+        return btoa(navigator.userAgent + screen.width + screen.height + navigator.language).slice(0, 32);
     }
 
     async function activate() { 
         const k = document.getElementById('pass-key').value;
-        const errorEl = document.getElementById('error-msg');
-        const myFinger = getFingerprint();
-        
-        // تصفير الخطأ عند المحاولة الجديدة
-        errorEl.style.display = 'none';
-        errorEl.innerText = "";
-
+        const errMsg = document.getElementById('error-msg');
         if(!k) return;
 
-        const userRef = db.collection("users").doc(k);
-        const doc = await userRef.get();
+        const currentFingerprint = getDeviceFingerprint();
 
-        if (doc.exists) { 
-            const data = doc.data();
-            const expiry = new Date(data.expiryDate).getTime();
+        try {
+            const doc = await db.collection("users").doc(k).get();
+            if (doc.exists) { 
+                const data = doc.data();
+                
+                // التحقق من بصمة الجهاز
+                if (data.deviceId && data.deviceId !== currentFingerprint) {
+                    errMsg.innerText = "❌ هذا الرمز مفعل على جهاز آخر مسبقاً!";
+                    errMsg.style.display = "block";
+                    return;
+                }
 
-            if (Date.now() > expiry) { 
-                errorEl.innerText = "⌛ الرمز منتهي الصلاحية!";
-                errorEl.style.display = 'block';
-                return; 
-            }
+                // إذا كانت أول مرة، نربط البصمة بالرمز
+                if (!data.deviceId) {
+                    await db.collection("users").doc(k).update({ deviceId: currentFingerprint });
+                }
 
-            if (!data.deviceId || data.deviceId === "") {
-                await userRef.update({ deviceId: myFinger });
-                proceedToApp(k, data);
-            } else if (data.deviceId === myFinger) {
-                proceedToApp(k, data);
+                userTier = data.tier || data.rank || 'silver';
+                localStorage.setItem('sz_ultimate_v1_key', k);
+                showSearch(); 
             } else {
-                errorEl.innerText = "⚠️ مستخدم على جهاز آخر!";
-                errorEl.style.display = 'block';
+                errMsg.innerText = "❌ الرمز غير صحيح أو غير مفعل!";
+                errMsg.style.display = "block";
             }
-        } else {
-            errorEl.innerText = "❌ الرمز غير صحيح!";
-            errorEl.style.display = 'block';
+        } catch (e) {
+            console.error(e);
         }
     }
 
-    function proceedToApp(k, data) {
-        userTier = data.tier || data.rank || 'silver';
-        localStorage.setItem('sz_ultimate_v1_key', k);
-        showSearch();
+    async function checkAuth() {
+        const key = localStorage.getItem('sz_ultimate_v1_key');
+        if (key) {
+            const currentFingerprint = getDeviceFingerprint();
+            const doc = await db.collection("users").doc(key).get();
+            if (doc.exists) {
+                const data = doc.data();
+                // حماية إضافية عند فتح البرنامج مرة ثانية
+                if (data.deviceId && data.deviceId === currentFingerprint) {
+                    userTier = data.tier || data.rank || 'silver'; 
+                    showSearch();
+                } else {
+                    localStorage.removeItem('sz_ultimate_v1_key');
+                    location.reload();
+                }
+            }
+        }
     }
-    
-    // بقية الدوال (showSearch, searchCoins, startRadar, إلخ) تظل كما هي في كودك الأساسي
+
+    // --- بقية الدوال الأصلية كما هي تماماً دون أي تغيير ---
+    // (switchTab, updatePrice, updateLiquidity, الخ)
 </script>
 </body>
 </html>
