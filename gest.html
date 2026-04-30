@@ -92,10 +92,8 @@
     <div id="zoom-container">
         <div id="custom-alert">
             <div class="alert-box">
-                <div id="alert-content">
-                  <h4>🔒 قسم مخصص لترقية أعلى</h4>
-                  <p>عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️</p>
-                </div>
+                <div id="alert-header"><h4>🔒 قسم مخصص لترقية أعلى</h4></div>
+                <p id="alert-message">عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️</p>
                 <button onclick="closeAlert()">حسناً</button>
             </div>
         </div>
@@ -247,7 +245,7 @@
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // 1. دالة توليد بصمة المتصفح الفريدة
+    // دالة توليد بصمة الجهاز الفريدة لربط الحساب بجهاز واحد
     function getDeviceFingerprint() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -257,7 +255,7 @@
         ctx.fillText("sezar-phantom-pro", 4, 17);
         const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
         let hash = 0; for (let i = 0; i < b64.length; i++) { hash = ((hash << 5) - hash) + b64.charCodeAt(i); hash |= 0; }
-        return hash.toString();
+        return "ID-" + Math.abs(hash);
     }
     
     function playSniperWhistle(isDanger = false) {
@@ -274,10 +272,17 @@
 
     function setZoom(scale) { const container = document.getElementById('zoom-container'); container.style.transform = `scale(${scale})`; container.style.width = (100 / scale) + '%'; }
     
-    function showAlert(title = "🔒 قسم مخصص لترقية أعلى", msg = "عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️") { 
-        document.getElementById('alert-content').innerHTML = `<h4>${title}</h4><p>${msg}</p>`;
-        document.getElementById('custom-alert').style.display = 'flex'; 
+    function showCustomAlert(title, message) {
+        const alertBox = document.getElementById('custom-alert');
+        document.getElementById('alert-header').innerHTML = `<h4>${title}</h4>`;
+        document.getElementById('alert-message').innerHTML = message;
+        alertBox.style.display = 'flex';
     }
+
+    function showAlert() { 
+        showCustomAlert("🔒 قسم مخصص لترقية أعلى", "عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️");
+    }
+
     function closeAlert() { document.getElementById('custom-alert').style.display = 'none'; }
 
     function switchTab(tab) {
@@ -462,29 +467,26 @@
         } catch (e) {}
     }
 
-    // 2. تعديل دالة التحقق لتشمل بصمة الجهاز
     async function checkAuth() {
         const key = localStorage.getItem('sz_ultimate_v1_key');
         if (key) {
-            const doc = await db.collection("users").doc(key).get();
-            if (doc.exists) {
-                const data = doc.data();
-                const deviceID = getDeviceFingerprint();
-                
-                // إذا كان المفتاح مسجل ببصمة مختلفة عن جهاز الحالي، يتم طرد المستخدم
-                if (data.deviceId && data.deviceId !== deviceID) {
-                    localStorage.removeItem('sz_ultimate_v1_key');
-                    showAlert("🔒 خطأ في الترخيص", "هذا المفتاح مفعل مسبقاً على جهاز آخر!<br>يرجى التواصل مع الإدارة.");
-                    return;
+            try {
+                const doc = await db.collection("users").doc(key).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    const currentID = getDeviceFingerprint();
+                    if (data.deviceId && data.deviceId !== currentID) {
+                        localStorage.removeItem('sz_ultimate_v1_key');
+                        showCustomAlert("🔒 خطأ في الترخيص", "عذراً، هذا الرمز مفعل مسبقاً على جهاز آخر!<br>لا يمكنك الدخول من هذا الجهاز.");
+                        return;
+                    }
+                    userTier = data.tier || data.rank || 'silver'; 
+                    showSearch();
                 }
-                
-                userTier = data.tier || data.rank || 'silver'; 
-                showSearch();
-            }
+            } catch (e) {}
         }
     }
 
-    // 3. تعديل دالة التفعيل لربط المفتاح بالجهاز وحفظ البصمة
     async function activate() { 
         const k = document.getElementById('pass-key').value;
         if(!k) return;
@@ -494,28 +496,27 @@
         try {
             const userRef = db.collection("users").doc(k);
             const doc = await userRef.get();
-            
             if (doc.exists) { 
                 const data = doc.data();
-                const deviceID = getDeviceFingerprint();
+                const currentID = getDeviceFingerprint();
 
-                // التحقق إذا كان المفتاح مرتبطاً بجهاز آخر
-                if (data.deviceId && data.deviceId !== deviceID) {
+                // التحقق من بصمة الجهاز
+                if (data.deviceId && data.deviceId !== currentID) {
                     errorMsg.innerText = "❌ هذا الرمز مفعل على جهاز آخر!";
                     errorMsg.style.display = 'block';
                     return;
                 }
 
-                // إذا كان الحقل فارغاً، نربطه بالجهاز الحالي (دمج البيانات لعدم الحذف)
+                // حفظ بصمة الجهاز في Firebase عند أول دخول (Merge لعدم مسح البيانات القديمة)
                 if (!data.deviceId) {
-                    await userRef.set({ deviceId: deviceID }, { merge: true });
+                    await userRef.set({ deviceId: currentID }, { merge: true });
                 }
 
                 userTier = data.tier || data.rank || 'silver';
                 localStorage.setItem('sz_ultimate_v1_key', k);
                 showSearch(); 
             } else {
-                errorMsg.innerText = "❌ الرمز غير موجود أو غير صحيح!";
+                errorMsg.innerText = "❌ عذراً، هذا الرمز غير صحيح!";
                 errorMsg.style.display = 'block';
             }
         } catch (e) {
