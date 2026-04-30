@@ -245,8 +245,8 @@
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // دالة توليد بصمة الجهاز الحديدية
-    function getDeviceFingerprint() {
+    // دالة إنشاء بصمة الجهاز الفريدة
+    function getFingerprint() {
         return btoa(navigator.userAgent + navigator.language + screen.width + screen.height).substring(0, 16);
     }
 
@@ -450,40 +450,43 @@
 
     async function checkAuth() {
         const key = localStorage.getItem('sz_ultimate_v1_key');
+        const myFinger = getFingerprint();
         if (key) {
             const doc = await db.collection("users").doc(key).get();
             if (doc.exists) {
                 const data = doc.data();
-                const now = new Date();
-                const expiry = new Date(data.expiryDate);
+                const now = Date.now();
+                const expiry = new Date(data.expiryDate).getTime();
 
-                // فحص انتهاء الاشتراك
-                if (now > expiry) {
+                // فحص الطرد الزمني
+                if (Date.now() > expiry) {
                     localStorage.removeItem('sz_ultimate_v1_key');
-                    alert("⌛ انتهى اشتراكك، يرجى التجديد للتفعيل.");
+                    alert("⌛ انتهى اشتراكك، يرجى التجديد.");
                     location.reload();
                     return;
                 }
 
-                // فحص بصمة الجهاز
-                const myFinger = getDeviceFingerprint();
+                // فحص الطرد الأمني (بصمة الجهاز)
                 if (data.deviceId && data.deviceId !== "" && data.deviceId !== myFinger) {
                     localStorage.removeItem('sz_ultimate_v1_key');
-                    alert("⚠️ هذا الرمز مفعل على جهاز آخر!");
+                    alert("⚠️ هذا الرمز مرتبط بجهاز آخر، تم تسجيل خروجك!");
                     location.reload();
                     return;
                 }
 
                 userTier = data.tier || data.rank || 'silver'; 
                 showSearch();
-                
-                // تشغيل فاحص الاشتراك اللحظي كل دقيقة
+
+                // مؤقت الطرد اللحظي كل دقيقة
                 setInterval(async () => {
                     const d = await db.collection("users").doc(key).get();
-                    if(d.exists && new Date() > new Date(d.data().expiryDate)) {
-                        alert("⌛ انتهى الوقت!");
-                        localStorage.removeItem('sz_ultimate_v1_key');
-                        location.reload();
+                    if(d.exists) {
+                        const cur = d.data();
+                        if(Date.now() > new Date(cur.expiryDate).getTime() || (cur.deviceId && cur.deviceId !== myFinger)) {
+                            alert("⌛ تم إنهاء الجلسة (انتهاء وقت أو جهاز آخر)!");
+                            localStorage.removeItem('sz_ultimate_v1_key');
+                            location.reload();
+                        }
                     }
                 }, 60000);
             }
@@ -492,18 +495,17 @@
 
     async function activate() { 
         const k = document.getElementById('pass-key').value;
+        const myFinger = getFingerprint();
         if(!k) return;
         const userRef = db.collection("users").doc(k);
         const doc = await userRef.get();
         if (doc.exists) { 
             const data = doc.data();
-            const now = new Date();
-            const expiry = new Date(data.expiryDate);
-            const myFinger = getDeviceFingerprint();
+            const expiry = new Date(data.expiryDate).getTime();
 
-            if (now > expiry) { alert("الرمز منتهي الصلاحية!"); return; }
+            if (Date.now() > expiry) { alert("الرمز منتهي الصلاحية!"); return; }
 
-            // الربط بأول جهاز يدخل
+            // الربط بأول جهاز يدخل إذا كان الحقل فارغاً
             if (!data.deviceId || data.deviceId === "") {
                 await userRef.update({ deviceId: myFinger });
                 proceedToApp(k, data);
