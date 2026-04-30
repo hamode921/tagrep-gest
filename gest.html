@@ -70,6 +70,7 @@
         @keyframes blink-gold { 0% { border-color: var(--gold); box-shadow: 0 0 12px var(--gold); } 50% { border-color: #555; box-shadow: none; } 100% { border-color: var(--gold); box-shadow: 0 0 12px var(--gold); } }
         .blink-border { animation: blink-gold 0.6s infinite; border-width: 2px !important; }
 
+        /* --- ستايل الرسالة الاحترافية (جراحي) --- */
         #custom-alert {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;
@@ -92,8 +93,10 @@
     <div id="zoom-container">
         <div id="custom-alert">
             <div class="alert-box">
-                <h4 id="alert-title">🔒 قسم مخصص لترقية أعلى</h4>
-                <p id="alert-msg">عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️</p>
+                <div id="alert-content">
+                  <h4>🔒 قسم مخصص لترقية أعلى</h4>
+                  <p>عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️</p>
+                </div>
                 <button onclick="closeAlert()">حسناً</button>
             </div>
         </div>
@@ -110,13 +113,120 @@
             </div>
         </div>
 
-        <!-- بقية الأقسام (كما هي بدون تغيير) -->
-        <div id="alpha-screen">...</div>
-        <div id="search-screen">...</div>
-        <div id="scanner-screen">...</div>
-        <div id="whale-hunt-screen">...</div>
-        <div id="pump-dump-screen">...</div>
-        <div id="radar-ui">...</div>
+        <div id="alpha-screen">
+            <div class="sezar-brand"><span class="sub-text" style="color:var(--gold);">ALPHA WEB3</span></div>
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="switchTab('alpha')">🪐 ALPHA</button>
+                <button class="tab-btn" onclick="switchTab('search')">🔍 SEARCH</button>
+                <button class="tab-btn" onclick="switchTab('scanner')">🛰️ SCANNER</button>
+                <button class="tab-btn" onclick="switchTab('whale-hunt')">🐋 WHALE</button>
+                <button class="tab-btn" onclick="switchTab('pump-dump')" style="border-color: var(--red); color: var(--red);">🌋 PUMP/DUMP</button>
+            </div>
+            <div id="alpha-list"></div>
+        </div>
+
+        <div id="search-screen">
+            <div class="sezar-brand"><span class="sub-text">「 SEZAR-PHANTOM 」</span></div>
+            <div class="nav-tabs">
+                <button class="tab-btn" onclick="switchTab('alpha')">🪐 ALPHA</button>
+                <button class="tab-btn active" onclick="switchTab('search')">🔍 SEARCH</button>
+                <button class="tab-btn" onclick="switchTab('scanner')">🛰️ SCANNER</button>
+                <button class="tab-btn" onclick="switchTab('whale-hunt')">🐋 WHALE</button>
+                <button class="tab-btn" onclick="switchTab('pump-dump')" style="border-color: var(--red); color: var(--red);">🌋 PUMP/DUMP</button>
+            </div>
+            <input type="text" class="search-input" id="search-input" placeholder="🔍 Search Spot & Futures..." oninput="searchCoins()">
+            <div id="results-list"></div>
+        </div>
+
+        <div id="scanner-screen">
+            <div class="sezar-brand"><span class="sub-text" style="color:var(--ghost);">WHALE SCANNER</span></div>
+            <div class="nav-tabs">
+                <button class="tab-btn" onclick="switchTab('alpha')">🪐 ALPHA</button>
+                <button class="tab-btn" onclick="switchTab('search')">🔍 SEARCH</button>
+                <button class="tab-btn active" onclick="switchTab('scanner')">🛰️ SCANNER</button>
+                <button class="tab-btn" onclick="switchTab('whale-hunt')">🐋 WHALE</button>
+                <button class="tab-btn" onclick="switchTab('pump-dump')" style="border-color: var(--red); color: var(--red);">🌋 PUMP/DUMP</button>
+            </div>
+            <div id="scanner-list"></div>
+        </div>
+
+        <div id="whale-hunt-screen">
+            <div class="sezar-brand"><span class="sub-text" style="color:var(--green);">WHALE ACCUMULATION</span></div>
+            <div class="nav-tabs">
+                <button class="tab-btn" onclick="switchTab('alpha')">🪐 ALPHA</button>
+                <button class="tab-btn" onclick="switchTab('search')">🔍 SEARCH</button>
+                <button class="tab-btn" onclick="switchTab('scanner')">🛰️ SCANNER</button>
+                <button class="tab-btn active" onclick="switchTab('whale-hunt')">🐋 WHALE</button>
+                <button class="tab-btn" onclick="switchTab('pump-dump')" style="border-color: var(--red); color: var(--red);">🌋 PUMP/DUMP</button>
+            </div>
+            <div id="whale-hunt-list"></div>
+        </div>
+
+        <div id="pump-dump-screen">
+            <div class="sezar-brand"><span class="sub-text" style="color:var(--red);">PUMP & DUMP RADAR</span></div>
+            <div class="nav-tabs">
+                <button class="tab-btn" onclick="switchTab('alpha')">🪐 ALPHA</button>
+                <button class="tab-btn" onclick="switchTab('search')">🔍 SEARCH</button>
+                <button class="tab-btn" onclick="switchTab('scanner')">🛰️ SCANNER</button>
+                <button class="tab-btn" onclick="switchTab('whale-hunt')">🐋 WHALE</button>
+                <button class="tab-btn active" onclick="switchTab('pump-dump')" style="border-color: var(--red); color: var(--red);">🌋 PUMP/DUMP</button>
+            </div>
+            <div id="pump-dump-list"></div>
+        </div>
+
+        <div id="radar-ui">
+            <div class="header">
+                <button class="back-btn" onclick="goBack()">🔙 Back</button>
+                <h2 id="radar-title">「 SEZAR-PHANTOM 」</h2>
+                <p id="current-coin-name" style="font-size:11px; margin:0;">[ BTCUSDT ]</p>
+            </div>
+            <div class="price-box" id="coin-price">Loading...</div>
+            <div id="chart-container">
+                <iframe id="chart-frame" src=""></iframe>
+                <div id="sell-wall-line" class="chart-wall-line" style="background: var(--red); display: none;"><span class="wall-label" style="color: var(--red);">SELL: <span id="sw-vol"></span></span></div>
+                <div id="buy-wall-line" class="chart-wall-line" style="background: var(--green); display: none;"><span class="wall-label" style="color: var(--green);">BUY: <span id="bw-vol"></span></span></div>
+            </div>
+            <div class="timer-text">LIQUIDITY UPDATE: <span id="timer">30</span>s</div>
+            <div id="buy-sell-per">
+                <button class="inline-btn" onclick="setZoom(0.6)">-</button>
+                <span id="buy-sell-display">BUY: --% | SELL: --%</span>
+                <button class="inline-btn" onclick="setZoom(1.0)">🏠</button>
+            </div>
+            <div id="power-bar" style="flex-direction: row-reverse;"></div>
+            <div class="whale-live-box">
+                <div class="whale-col">
+                    <div class="whale-label">SHORT WHALES</div>
+                    <div id="sw-count-whale" class="whale-val" style="color:var(--red)">--</div>
+                    <div id="sw-vol-whale" class="whale-sub" style="color:#888">$0.00M</div>
+                </div>
+                <div class="whale-col" style="border-left:1px solid #222; border-right:1px solid #222;">
+                    <div class="whale-label">NET RATIO</div>
+                    <div class="whale-val" style="color:var(--gold); font-size:11px;">FUTURES</div>
+                    <div id="net-perc" class="whale-sub" style="color:var(--gold)">0.0%</div>
+                </div>
+                <div class="whale-col">
+                    <div class="whale-label">LONG WHALES</div>
+                    <div id="lw-count" class="whale-val" style="color:var(--green)">--</div>
+                    <div id="lw-vol" class="whale-sub" style="color:#888">$0.00M</div>
+                </div>
+            </div>
+            <div id="s-walls"></div>
+            <div class="ai-signal-box">
+                <div id="support-shield-text" style="font-size:11px; color:var(--green); font-weight:bold; border-bottom:1px solid #222; padding-bottom:5px; margin-bottom:8px;">🛡️ SUPPORT SHIELD: ACTIVE</div>
+                <div id="ai-decision">Analyzing...</div>
+                <div class="ai-meta"><span>TARGET: <span id="ai-target">--</span></span><span>ACCURACY: <span id="ai-conf">--</span></span></div>
+            </div>
+            <div id="b-walls" style="margin-top:20px;"></div>
+            <div class="ice-card">
+                <div style="font-size:11px; color:var(--ghost); display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;">
+                    <span>Iceberg Detector</span>
+                    <span id="ice-threshold-display" style="background:#4c1d95; color:#fff; padding:2px 8px; border-radius:10px;">50K</span>
+                </div>
+                <div style="padding: 10px 0;"><input type="range" id="ice-sensitivity" min="1000" max="100000" step="1000" value="50000" style="width: 100%; accent-color: var(--ghost);" oninput="document.getElementById('ice-threshold-display').innerText = (this.value >= 1000 ? (this.value/1000).toFixed(0) + 'K' : this.value)"></div>
+                <div id="iceberg-list"></div>
+            </div>
+            <div id="sig-box">WAITING...</div>
+        </div>
     </div>
 </div>
 <div class="contact-dev"><a href="https://t.me/se44se" target="_blank">✈️ تليجرام</a><a href="mailto:sezarphantom@gmail.com">📧 الإيميل</a></div>
@@ -125,69 +235,460 @@
     const firebaseConfig = { apiKey: "AIzaSyAzEZksgZMPbY79K_TM3mHKeW1shQ6V-lY", authDomain: "sezar-phantom-auth.firebaseapp.com", projectId: "sezar-phantom-auth", storageBucket: "sezar-phantom-auth.firebasestorage.app", messagingSenderId: "112991314655", appId: "1:112991314655:web:cbca0b5c0c6b6e4f51ff6a" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    
+    let userTier = 'silver'; 
+    let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, currentPrice = 0, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt, scanInt, huntInt, pdInt, alphaInt;
+    let sigBuffer = { buy: 0, sell: 0 }, lastSupportWall = 0, lastBidsTotal = 0, spoofCounter = 0;
+    let wallStabilityCounter = 0; 
+    let lastTopBidPrice = 0; 
+    let lastVolMap = new Map();
+    let lockedAlphaCoins = new Map();
+    let lockedScannerCoins = new Map();
+    let lastSignalTime = 0;
 
-    // دالة توليد بصمة الجهاز (الجراحة البرمجية)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // دالة لاستخراج بصمة الجهاز (Hardware Identifier البديل للمتصفح)
     function getDeviceFingerprint() {
-        return btoa(navigator.userAgent + screen.width + screen.height + navigator.language).slice(0, 32);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = "#f60"; ctx.fillRect(125, 1, 62, 20); ctx.fillStyle = "#069";
+        ctx.fillText("sezar-phantom-pro", 2, 15); ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+        ctx.fillText("sezar-phantom-pro", 4, 17);
+        const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
+        let hash = 0; for (let i = 0; i < b64.length; i++) { hash = ((hash << 5) - hash) + b64.charCodeAt(i); hash |= 0; }
+        return hash.toString();
+    }
+    
+    function playSniperWhistle(isDanger = false) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = isDanger ? 'sawtooth' : 'sine';
+        osc.frequency.setValueAtTime(isDanger ? 1200 : 880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
     }
 
+    function setZoom(scale) { const container = document.getElementById('zoom-container'); container.style.transform = `scale(${scale})`; container.style.width = (100 / scale) + '%'; }
+    
+    function showAlert(title = "🔒 قسم مخصص لترقية أعلى", msg = "عذراً عزيزي المشترك، هذا القسم مخصص لترقية أعلى!<br>للحصول على الترقية، يرجى التواصل مع المطور أسفل الشاشة ⬇️") { 
+        document.getElementById('alert-content').innerHTML = `<h4>${title}</h4><p>${msg}</p>`;
+        document.getElementById('custom-alert').style.display = 'flex'; 
+    }
+    function closeAlert() { document.getElementById('custom-alert').style.display = 'none'; }
+
+    function switchTab(tab) {
+        const limits = { 'alpha': 'diamond', 'scanner': 'gold', 'whale-hunt': 'diamond', 'pump-dump': 'diamond' };
+        if (limits[tab]) {
+            let locked = false;
+            if (userTier === 'silver' && tab !== 'search') locked = true;
+            if (userTier === 'gold' && (tab === 'alpha' || tab === 'whale-hunt' || tab === 'pump-dump')) locked = true;
+            if (locked) { showAlert(); return; }
+        }
+        const screens = ['auth-screen', 'alpha-screen', 'search-screen', 'scanner-screen', 'whale-hunt-screen', 'pump-dump-screen', 'radar-ui'];
+        screens.forEach(s => { const el = document.getElementById(s); if(el) el.style.display = 'none'; });
+        const target = (tab === 'radar') ? 'radar-ui' : tab + '-screen';
+        if(document.getElementById(target)) document.getElementById(target).style.display = 'block';
+        clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt);
+        if(tab === 'alpha') { updateAlpha(); alphaInt = setInterval(updateAlpha, 5000); }
+        if(tab === 'scanner') { updateScanner(); scanInt = setInterval(updateScanner, 5000); }
+        if(tab === 'whale-hunt') { updateWhaleHunt(); huntInt = setInterval(updateWhaleHunt, 10000); }
+        if(tab === 'pump-dump') { updatePumpDump(); pdInt = setInterval(updatePumpDump, 5000); }
+    }
+
+    async function updateAlpha() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+            const data = await res.json();
+            const list = document.getElementById('alpha-list');
+            const now = Date.now();
+            for (let [sym, expire] of lockedAlphaCoins) { if (now > expire) lockedAlphaCoins.delete(sym); }
+            let candidates = data.filter(c => {
+                const change = parseFloat(c.priceChangePercent);
+                const volume = parseFloat(c.quoteVolume);
+                return c.symbol.endsWith('USDT') && change >= 2.5 && volume > 5000000;
+            }).map(c => {
+                const currentVol = parseFloat(c.quoteVolume);
+                const prevVol = lastVolMap.get(c.symbol) || currentVol;
+                const volIncrease = prevVol > 0 ? ((currentVol - prevVol) / prevVol) * 100 : 0;
+                lastVolMap.set(c.symbol, currentVol);
+                return { ...c, volIncrease };
+            }).filter(c => c.volIncrease > 1.0);
+            candidates.forEach(c => { if(!lockedAlphaCoins.has(c.symbol)) lockedAlphaCoins.set(c.symbol, now + 45000); });
+            let finalDisplay = [];
+            for (let [sym, expire] of lockedAlphaCoins) {
+                const coinData = data.find(d => d.symbol === sym);
+                if(coinData) finalDisplay.push({...coinData, isLocked: true, timeLeft: Math.ceil((expire - now)/1000)});
+            }
+            let html = '';
+            finalDisplay.sort((a,b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent)).forEach(c => {
+                html += `<div class="scan-item blink-border" style="border-left: 5px solid var(--gold); background: rgba(251, 191, 36, 0.05)">
+                    <div style="text-align:right">
+                        <div style="color:var(--gold); font-weight:bold; font-size:16px; display:flex; align-items:center;">
+                            🪐 ${c.symbol} <span class="alpha-tag">FLIGHT IN PROGRESS 🚀</span>
+                            <span style="font-size:10px; color:var(--red); font-weight:bold; margin-right:8px;">[تثبيت: ${c.timeLeft}ث]</span>
+                        </div>
+                        <div style="color:var(--green); font-size:13px; font-weight:bold;">الزخم الحالي: ${c.priceChangePercent}%</div>
+                        <div style="color:#888; font-size:10px;">VOLUME: ${(parseFloat(c.quoteVolume)/1000000).toFixed(2)}M</div>
+                    </div>
+                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:var(--gold); color:#000; border:none; padding:12px 25px; border-radius:10px; cursor:pointer; font-weight:bold; box-shadow: 0 0 10px var(--gold);">التحليق 🔭</button>
+                </div>`;
+            });
+            list.innerHTML = html || '<div style="color:#555; margin-top:20px;">جاري رصد موجات التحليق الكبرى...</div>';
+        } catch (e) {}
+    }
+
+    async function updateScanner() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+            const data = await res.json();
+            const list = document.getElementById('scanner-list');
+            const now = Date.now();
+            for (let [sym, expire] of lockedScannerCoins) { if (now > expire) lockedScannerCoins.delete(sym); }
+            let alphaSymbols = Array.from(lockedAlphaCoins.keys());
+            let spikeCandidates = data.filter(c => {
+                const change = parseFloat(c.priceChangePercent);
+                const volume = parseFloat(c.quoteVolume);
+                const isAlpha = alphaSymbols.includes(c.symbol);
+                return c.symbol.endsWith('USDT') && (isAlpha || (change >= 0 && change <= 15 && volume > 5000000));
+            }).map(c => {
+                const currentVol = parseFloat(c.quoteVolume);
+                const prevVol = lastVolMap.get(c.symbol) || currentVol;
+                const volIncrease = prevVol > 0 ? ((currentVol - prevVol) / prevVol) * 100 : 0;
+                lastVolMap.set(c.symbol, currentVol);
+                return { ...c, volIncrease };
+            }).filter(c => c.volIncrease > 0.8).sort((a,b) => b.volIncrease - a.volIncrease);
+            spikeCandidates.forEach(c => { if(!lockedScannerCoins.has(c.symbol)) lockedScannerCoins.set(c.symbol, now + 30000); });
+            let finalDisplay = [];
+            for (let [sym, expire] of lockedScannerCoins) {
+                const coinData = data.find(d => d.symbol === sym);
+                if(coinData) finalDisplay.push({...coinData, isLocked: true, timeLeft: Math.ceil((expire - now)/1000)});
+            }
+            data.filter(c => c.symbol.endsWith('USDT') && parseFloat(c.quoteVolume) > 3000000)
+              .sort((a,b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent))
+              .forEach(c => { if(!finalDisplay.find(f => f.symbol === c.symbol)) finalDisplay.push(c); });
+            let htmlContent = '';
+            finalDisplay.slice(0, 15).forEach(c => {
+                const isLocked = c.isLocked || false;
+                const isAlpha = alphaSymbols.includes(c.symbol);
+                const volM = (parseFloat(c.quoteVolume) / 1000000).toFixed(1);
+                htmlContent += `<div class="scan-item ${isLocked ? 'blink-border' : ''}" style="border-left: 5px solid ${isAlpha ? 'var(--gold)' : 'var(--ghost)'}">
+                    <div style="text-align:right">
+                        <div style="color:var(--gold); font-weight:bold; font-size:16px; display:flex; align-items:center;">
+                            ${isAlpha ? '🪐 ' : '🛰️ '}${c.symbol}
+                            ${isLocked ? `<span style="font-size:10px; color:var(--red); font-weight:bold; margin-right:8px;">[تثبيت: ${c.timeLeft}ث]</span>` : ''}
+                        </div>
+                        <div style="color:var(--green); font-size:12px; font-weight:bold;">${isAlpha ? 'ALFA DETECTED' : 'MEME RADAR'}: ${c.priceChangePercent}%</div>
+                        <div style="color:#888; font-size:10px; margin-top:2px;">VOL: ${volM}M | CHG: ${c.priceChangePercent}%</div>
+                    </div>
+                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:var(--gold); color:#000; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">قنص 🎯</button>
+                </div>`;
+            });
+            list.innerHTML = htmlContent || '<div style="color:#555; margin-top:20px;">جاري مراقبة العملات المتهيأة...</div>';
+        } catch (e) {}
+    }
+
+    async function updateWhaleHunt() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+            const data = await res.json();
+            const list = document.getElementById('whale-hunt-list');
+            let alphaSymbols = Array.from(lockedAlphaCoins.keys());
+            let candidates = data.filter(c => {
+                const change = parseFloat(c.priceChangePercent);
+                const volume = parseFloat(c.quoteVolume);
+                const isAlpha = alphaSymbols.includes(c.symbol);
+                return c.symbol.endsWith('USDT') && (isAlpha || (change >= -1 && change <= 3 && volume > 10000000));
+            }).map(c => {
+                const vol = parseFloat(c.quoteVolume);
+                const score = (vol / 50000000) + (parseFloat(c.priceChangePercent) * 2);
+                return { ...c, huntScore: score };
+            }).sort((a,b) => b.huntScore - a.huntScore).slice(0, 10);
+            let html = '';
+            candidates.forEach(c => {
+                const isStrong = c.huntScore > 5;
+                html += `<div class="scan-item ${isStrong ? 'whale-alert' : ''}">
+                    <div style="text-align:right">
+                        <div style="color:var(--gold); font-weight:bold; font-size:16px;">
+                            ${isStrong ? '🐋 ' : ''}${c.symbol}
+                            ${isStrong ? '<span class="hunt-tag">تجميع حيتان 🔥</span>' : ''}
+                        </div>
+                        <div style="color:var(--green); font-size:11px;">PRE-EXPLOSION: +5% ~ +15%</div>
+                        <div style="color:#888; font-size:10px;">VOL: ${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M | CHG: ${c.priceChangePercent}%</div>
+                    </div>
+                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:var(--green); color:#000; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">صيد 🎯</button>
+                </div>`;
+            });
+            list.innerHTML = html;
+        } catch (e) {}
+    }
+
+    async function updatePumpDump() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+            const data = await res.json();
+            const list = document.getElementById('pump-dump-list');
+            let candidates = data.filter(c => {
+                const vol = parseFloat(c.quoteVolume);
+                const chg = parseFloat(c.priceChangePercent);
+                return c.symbol.endsWith('USDT') && vol > 20000000 && Math.abs(chg) > 2;
+            }).map(c => {
+                const currentVol = parseFloat(c.quoteVolume);
+                const prevVol = lastVolMap.get(c.symbol) || currentVol;
+                const volSpeed = ((currentVol - prevVol) / prevVol) * 100;
+                lastVolMap.set(c.symbol, currentVol);
+                return { ...c, volSpeed: volSpeed, isPump: parseFloat(c.priceChangePercent) > 0 };
+            }).sort((a,b) => b.volSpeed - a.volSpeed).slice(0, 12);
+            let html = '';
+            candidates.forEach(c => {
+                const speedTag = c.volSpeed > 1 ? `<span class="hunt-tag" style="background:var(--gold); color:#000">سيولة حية 🔥</span>` : '';
+                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPump ? 'var(--green)' : 'var(--red)'}">
+                    <div style="text-align:right">
+                        <div style="color:var(--gold); font-weight:bold; font-size:16px;">
+                            ${c.isPump ? '🚀 ' : '📉 '}${c.symbol} ${speedTag}
+                        </div>
+                        <div style="color:${c.isPump ? 'var(--green)' : 'var(--red)'}; font-size:11px;">
+                            ${c.isPump ? 'لحظة انفجار: ' : 'لحظة انهيار: '} ${c.priceChangePercent}%
+                        </div>
+                        <div style="color:#666; font-size:9px;">فوليوم لحظي: $${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M</div>
+                    </div>
+                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPump ? 'var(--green)' : 'var(--red)'}; color:#000; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">دخول 🎯</button>
+                </div>`;
+            });
+            list.innerHTML = html || '<div style="color:#555; margin-top:20px;">جاري رصد الانفجارات اللحظية...</div>';
+        } catch (e) {}
+    }
+
+    // تعديل دالة التحقق لتشمل بصمة الجهاز
+    async function checkAuth() {
+        const key = localStorage.getItem('sz_ultimate_v1_key');
+        if (key) {
+            const doc = await db.collection("users").doc(key).get();
+            if (doc.exists) {
+                const data = doc.data();
+                const deviceID = getDeviceFingerprint();
+                
+                // إذا كان المفتاح مسجل ببصمة مختلفة عن جهاز الحالي
+                if (data.deviceID && data.deviceID !== deviceID) {
+                    localStorage.removeItem('sz_ultimate_v1_key');
+                    showAlert("🔒 خطأ في الترخيص", "هذا المفتاح مفعل مسبقاً على جهاز آخر!<br>لا يمكنك استخدامه على أكثر من جهاز.");
+                    return;
+                }
+                
+                userTier = data.tier || data.rank || 'silver'; 
+                showSearch();
+            }
+        }
+    }
+
+    // تعديل دالة التفعيل لربط المفتاح بالجهاز عند أول دخول
     async function activate() { 
         const k = document.getElementById('pass-key').value;
-        const errMsg = document.getElementById('error-msg');
         if(!k) return;
-
-        const currentFingerprint = getDeviceFingerprint();
+        const errorMsg = document.getElementById('error-msg');
+        errorMsg.style.display = 'none';
 
         try {
             const doc = await db.collection("users").doc(k).get();
             if (doc.exists) { 
                 const data = doc.data();
-                
-                // التحقق من بصمة الجهاز
-                if (data.deviceId && data.deviceId !== currentFingerprint) {
-                    errMsg.innerText = "❌ هذا الرمز مفعل على جهاز آخر مسبقاً!";
-                    errMsg.style.display = "block";
+                const deviceID = getDeviceFingerprint();
+
+                // التحقق مما إذا كان المفتاح مرتبطاً بجهاز آخر
+                if (data.deviceID && data.deviceID !== deviceID) {
+                    errorMsg.innerText = "❌ هذا الرمز مفعل على جهاز آخر!";
+                    errorMsg.style.display = 'block';
                     return;
                 }
 
-                // إذا كانت أول مرة، نربط البصمة بالرمز
-                if (!data.deviceId) {
-                    await db.collection("users").doc(k).update({ deviceId: currentFingerprint });
+                // إذا كان المفتاح جديداً (بدون deviceID)، نربطه بالجهاز الحالي
+                if (!data.deviceID) {
+                    await db.collection("users").doc(k).update({ deviceID: deviceID });
                 }
 
                 userTier = data.tier || data.rank || 'silver';
                 localStorage.setItem('sz_ultimate_v1_key', k);
                 showSearch(); 
             } else {
-                errMsg.innerText = "❌ الرمز غير صحيح أو غير مفعل!";
-                errMsg.style.display = "block";
+                errorMsg.innerText = "❌ الرمز غير صحيح!";
+                errorMsg.style.display = 'block';
             }
         } catch (e) {
-            console.error(e);
+            errorMsg.innerText = "❌ حدث خطأ في الاتصال!";
+            errorMsg.style.display = 'block';
         }
     }
 
-    async function checkAuth() {
-        const key = localStorage.getItem('sz_ultimate_v1_key');
-        if (key) {
-            const currentFingerprint = getDeviceFingerprint();
-            const doc = await db.collection("users").doc(key).get();
-            if (doc.exists) {
-                const data = doc.data();
-                // حماية إضافية عند فتح البرنامج مرة ثانية
-                if (data.deviceId && data.deviceId === currentFingerprint) {
-                    userTier = data.tier || data.rank || 'silver'; 
-                    showSearch();
-                } else {
-                    localStorage.removeItem('sz_ultimate_v1_key');
-                    location.reload();
-                }
+    async function showSearch() {
+        document.getElementById('auth-screen').style.display = 'none';
+        switchTab('search');
+        if (allCoins.length === 0) {
+            const [spotRes, futRes] = await Promise.all([ fetch('https://api.binance.com/api/v3/exchangeInfo'), fetch('https://fapi.binance.com/fapi/v1/exchangeInfo') ]);
+            const spotData = await spotRes.json();
+            const futData = await futRes.json();
+            let spotList = spotData.symbols.filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT')).map(s => ({s: s.symbol, m: 'spot'}));
+            let futList = futData.symbols.filter(s => s.status === 'TRADING' && s.contractType === 'PERPETUAL').map(s => ({s: s.symbol, m: 'futures'}));
+            allCoins = [...spotList, ...futList];
+        }
+        searchCoins();
+    }
+
+    function searchCoins() {
+        const query = document.getElementById('search-input').value.toUpperCase();
+        const list = document.getElementById('results-list');
+        list.innerHTML = '';
+        let uniqueCoins = {};
+        allCoins.filter(c => c.s.includes(query)).forEach(c => { if (!uniqueCoins[c.s] || c.m === 'futures') uniqueCoins[c.s] = c; });
+        Object.values(uniqueCoins).slice(0, 15).forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'coin-item';
+            const color = c.m === 'futures' ? '#f0b90b' : '#00ffcc';
+            item.innerHTML = `<div><span class="coin-type" style="border:1px solid ${color}; color:${color}">${c.m.toUpperCase()}</span><span style="font-weight:bold;">${c.s}</span></div><div style="color:var(--gold); font-size:11px;">تحليل 🔭</div>`;
+            item.onclick = () => startRadar(c.s, c.m);
+            list.appendChild(item);
+        });
+    }
+
+    function startRadar(symbol, mode) {
+        currentSymbol = symbol;
+        const hasFutures = allCoins.find(c => c.s === symbol && c.m === 'futures');
+        currentMode = hasFutures ? 'futures' : 'spot';
+        switchTab('radar');
+        document.getElementById('iceberg-list').innerHTML = '';
+        lastBids = []; lastAsks = []; sigBuffer = { buy: 0, sell: 0 };
+        document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${currentMode.toUpperCase()}`;
+        const chartSymbol = currentMode === 'futures' ? `BINANCE:${symbol}PERP` : `BINANCE:${symbol}`;
+        document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=${chartSymbol}&interval=1&theme=dark`;
+        stopIntervals(); updatePrice(); updateLiquidity();
+        pInt = setInterval(updatePrice, 1000); 
+        lInt = setInterval(updateLiquidity, 3000);
+        iInt = setInterval(updateIceberg, 1000);
+        tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
+    }
+
+    function goBack() { stopIntervals(); switchTab('search'); }
+    function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); timeLeft = 30; }
+    
+    async function updatePrice() { 
+        try { 
+            const url = currentMode === 'futures' ? `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${currentSymbol}` : `https://api.binance.com/api/v3/ticker/price?symbol=${currentSymbol}`; 
+            const res = await fetch(url); 
+            const data = await res.json(); 
+            currentPrice = parseFloat(data.price); 
+            document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2}); 
+        } catch (e) {} 
+    }
+
+    async function updateLiquidity() {
+        try {
+            const baseUrl = currentMode === 'futures' ? 'https://fapi.binance.com/fapi/v1/depth' : 'https://api.binance.com/api/v3/depth';
+            const res = await fetch(`${baseUrl}?symbol=${currentSymbol}&limit=1000`);
+            const data = await res.json();
+            if(!data.bids || !data.asks) return;
+            let bids = data.bids.map(b => ({p: parseFloat(b[0]), v: parseFloat(b[1])}));
+            let asks = data.asks.map(a => ({p: parseFloat(a[0]), v: parseFloat(a[1])}));
+            let tB = bids.reduce((s,b)=>s+(b.p*b.v),0), tS = asks.reduce((s,a)=>s+(a.p*a.v),0);
+            let buyP = (tB/(tB+tS)*100), sellP = 100 - buyP;
+            document.getElementById('buy-sell-display').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${sellP.toFixed(1)}%`;
+            let lW = Math.max(1, Math.round((tB/1000000) * 1.5)), sW = Math.max(1, Math.round((tS/1000000) * 1.5));
+            document.getElementById('lw-count').innerText = lW;
+            document.getElementById('sw-count-whale').innerText = sW;
+            document.getElementById('lw-vol').innerText = `$${(tB/1000000).toFixed(2)}M`;
+            document.getElementById('sw-vol-whale').innerText = `$${(tS/1000000).toFixed(2)}M`;
+            document.getElementById('net-perc').innerText = buyP.toFixed(1) + "%";
+            let buyBalls = Math.round(buyP / 10), sellBalls = 10 - buyBalls;
+            document.getElementById('power-bar').innerHTML = '<div class="ball" style="background:var(--green)"></div>'.repeat(buyBalls) + '<div class="ball" style="background:var(--red)"></div>'.repeat(sellBalls);
+            const sig = document.getElementById('sig-box');
+            sig.innerText = buyP > 55 ? "🟢 SIGNAL: BULLISH" : (buyP < 45 ? "🔴 SIGNAL: BEARISH" : "🟡 SIGNAL: NEUTRAL");
+            sig.className = buyP > 55 ? "sig-bullish" : (buyP < 45 ? "sig-bearish" : "");
+            let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
+            drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
+            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
+            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+            const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
+            const supportShield = document.getElementById('support-shield-text');
+            const immSupport = bids.slice(0, 15).reduce((s,b)=>s+b.v, 0);
+            const immResistance = asks.slice(0, 15).reduce((s,a)=>s+a.v, 0);
+            if (topBid.p === lastTopBidPrice && lastTopBidPrice !== 0) { wallStabilityCounter++; } else { wallStabilityCounter = 0; }
+            if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
+                supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀";
+                supportShield.style.color = "var(--green)";
+            } else {
+                supportShield.innerText = "⚠️ SUPPORT SHIELD: FRAGILE";
+                supportShield.style.color = "var(--gold)";
             }
-        }
+            lastSupportWall = topBid.p;
+            const now = Date.now();
+            if (buyP > 65 && immSupport > immResistance && wallStabilityCounter >= 4) {
+                if (now - lastSignalTime > 5000) { 
+                    sigBuffer.buy++; sigBuffer.sell = 0;
+                    document.body.classList.remove('danger-blink');
+                    if (sigBuffer.buy >= 3) {
+                        playSniperWhistle(false);
+                        aiDec.innerText = "🚀 SNIPE BUY: TARGET REACHED";
+                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + topAsk.p.toLocaleString(); aiC.innerText = "94%";
+                        lastSignalTime = now;
+                    }
+                }
+            } else if (sellP > 65 || (lastBidsTotal > 0 && immSupport < lastBidsTotal * 0.3)) {
+                if (now - lastSignalTime > 3000) {
+                    sigBuffer.sell++; sigBuffer.buy = 0;
+                    playSniperWhistle(true);
+                    document.body.classList.add('danger-blink');
+                    aiDec.innerText = "🚨 RUG PULL / EXIT 💀";
+                    aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + topBid.p.toLocaleString(); aiC.innerText = "99%";
+                    lastSignalTime = now;
+                }
+            } else {
+                sigBuffer.buy = 0; sigBuffer.sell = 0;
+                document.body.classList.remove('danger-blink');
+                aiDec.innerText = "🟡 MONITORING FLOW"; aiDec.style.color = "var(--gold)"; aiTar.innerText = "N/A"; aiC.innerText = "--%";
+            }
+            lastBidsTotal = immSupport;
+            lastTopBidPrice = topBid.p;
+        } catch (e) {}
     }
 
-    // --- بقية الدوال الأصلية كما هي تماماً دون أي تغيير ---
-    // (switchTab, updatePrice, updateLiquidity, الخ)
+    function drawWallLine(wall, type) {
+        const line = document.getElementById(type + '-wall-line'), volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
+        if (!wall || !currentPrice) return;
+        let range = currentPrice * 0.005, diff = wall.p - currentPrice, pos = 175 - (diff / range) * 175;
+        if (pos > -10 && pos < 360) { line.style.display = 'block'; line.style.top = pos + 'px'; volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M'; }
+        else { line.style.display = 'none'; }
+    }
+
+    async function updateIceberg() {
+        try {
+            const url = currentMode === 'futures' ? `https://fapi.binance.com/fapi/v1/depth?symbol=${currentSymbol}&limit=5` : `https://api.binance.com/api/v3/depth?symbol=${currentSymbol}&limit=5`;
+            const res = await fetch(url);
+            const data = await res.json();
+            let bids = data.bids, asks = data.asks;
+            let found = [];
+            const sensitivity = parseInt(document.getElementById('ice-sensitivity').value);
+            if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
+                let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]), amt = d * bids[0][0];
+                if (amt > sensitivity) found.push({p: bids[0][0], m: amt, t: 'BUY TEAM'});
+            }
+            if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
+                let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]), amt = d * asks[0][0];
+                if (amt > sensitivity) found.push({p: asks[0][0], m: amt, t: 'SELL TEAM'});
+            }
+            if(found.length > 0) {
+                const list = document.getElementById('iceberg-list');
+                found.forEach(ice => {
+                    const row = document.createElement('div'); row.className = 'row';
+                    const mVal = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
+                    row.innerHTML = `<span style="color:${ice.t==='BUY TEAM'?'var(--green)':'var(--red)'}">${ice.t}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
+                    list.prepend(row); if (list.children.length > 5) list.removeChild(list.lastChild);
+                });
+            }
+            lastBids = bids; lastAsks = asks;
+        } catch (e) {}
+    }
 </script>
 </body>
 </html>
