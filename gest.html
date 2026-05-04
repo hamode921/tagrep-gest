@@ -20,7 +20,6 @@
         .secure-note { color: #888; font-size: 11px; margin-bottom: 15px; line-height: 1.6; }
         input.pass { background: #111; border: 1px solid #333; color: var(--gold); padding: 12px; text-align: center; margin-bottom: 20px; width: 95%; outline: none; border-radius: 5px; font-size: 18px; }
         button.login-btn { background: var(--gold); color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 18px; margin-bottom: 20px; }
-        
         #search-screen, #alpha-screen, #scanner-screen, #whale-hunt-screen, #pump-dump-screen { display: none; width: 100%; max-width: 450px; text-align: center; margin-top: 20px; }
         .sezar-brand { margin-bottom: 30px; }
         .sezar-brand .sub-text { font-size: 28px; font-weight: bold; color: var(--gold); text-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
@@ -245,20 +244,69 @@
     let lastSignalTime = 0;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // دالة إنشاء بصمة الجهاز الفريدة Hardware Fingerprint
-    function getDeviceFingerprint() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = "#f60"; ctx.fillRect(125, 1, 62, 20); ctx.fillStyle = "#069";
-        ctx.fillText("sezar-phantom-v1", 2, 15); ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-        ctx.fillText("sezar-phantom-v1", 4, 17);
-        const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
-        let hash = 0; for (let i = 0; i < b64.length; i++) { hash = ((hash << 5) - hash) + b64.charCodeAt(i); hash |= 0; }
-        return "DEV-" + Math.abs(hash).toString();
-    }
     
+    // --- دالة توليد بصمة الجهاز الفريدة ---
+    function getFingerprint() {
+        return btoa(navigator.userAgent + navigator.language + screen.width + screen.height);
+    }
+
+    async function checkAuth() {
+        const key = localStorage.getItem('sz_ultimate_v1_key');
+        if (key) {
+            const fingerprint = getFingerprint();
+            const doc = await db.collection("users").doc(key).get();
+            if (doc.exists) {
+                const data = doc.data();
+                // إذا تغير الجهاز، اطرده واطلب التفعيل مجدداً
+                if (data.deviceId && data.deviceId !== "" && data.deviceId !== fingerprint) {
+                    localStorage.removeItem('sz_ultimate_v1_key');
+                    location.reload();
+                    return;
+                }
+                userTier = data.tier || data.rank || 'silver'; 
+                showSearch();
+            }
+        }
+    }
+
+    async function activate() { 
+        const k = document.getElementById('pass-key').value.trim();
+        const errorMsg = document.getElementById('error-msg');
+        if(!k) return;
+
+        const fingerprint = getFingerprint();
+        
+        try {
+            const doc = await db.collection("users").doc(k).get();
+            if (doc.exists) { 
+                const data = doc.data();
+
+                // التحقق إذا كان الكود مستخدماً في جهاز آخر
+                if (data.deviceId && data.deviceId !== "" && data.deviceId !== fingerprint) {
+                    errorMsg.innerText = "❌ عذراً، هذا الكود مفعل على جهاز آخر مسبقاً!";
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+
+                // ربط الجهاز فوراً إذا كان الحقل فارغاً
+                if (!data.deviceId || data.deviceId === "") {
+                    await db.collection("users").doc(k).update({ deviceId: fingerprint });
+                }
+
+                userTier = data.tier || data.rank || 'silver';
+                localStorage.setItem('sz_ultimate_v1_key', k);
+                showSearch(); 
+            } else {
+                errorMsg.innerText = "❌ كود التفعيل غير صحيح!";
+                errorMsg.style.display = 'block';
+            }
+        } catch (e) {
+            errorMsg.innerText = "🚨 خطأ في الاتصال بالسيرفر!";
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    // بقية الدوال الرياضية والتحليلية كما هي
     function playSniperWhistle(isDanger = false) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -272,7 +320,6 @@
     }
 
     function setZoom(scale) { const container = document.getElementById('zoom-container'); container.style.transform = `scale(${scale})`; container.style.width = (100 / scale) + '%'; }
-    
     function showAlert() { document.getElementById('custom-alert').style.display = 'flex'; }
     function closeAlert() { document.getElementById('custom-alert').style.display = 'none'; }
 
@@ -285,7 +332,7 @@
             if (locked) { showAlert(); return; }
         }
         const screens = ['auth-screen', 'alpha-screen', 'search-screen', 'scanner-screen', 'whale-hunt-screen', 'pump-dump-screen', 'radar-ui'];
-        screens.forEach(s => { const el = document.getElementById(s); if(el) el.style.display = 'none'; });
+        screens.forEach(s => { if(document.getElementById(s)) document.getElementById(s).style.display = 'none'; });
         const target = (tab === 'radar') ? 'radar-ui' : tab + '-screen';
         if(document.getElementById(target)) document.getElementById(target).style.display = 'block';
         clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt);
@@ -383,7 +430,7 @@
                     <button onclick="startRadar('${c.symbol}', 'spot')" style="background:var(--gold); color:#000; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">قنص 🎯</button>
                 </div>`;
             });
-            list.innerHTML = htmlContent || '<div style="color:#555; margin-top:20px;">جاري مراقبة العملات المتهيأة...</div>';
+            list.innerHTML = htmlContent;
         } catch (e) {}
     }
 
@@ -454,71 +501,8 @@
                     <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPump ? 'var(--green)' : 'var(--red)'}; color:#000; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">دخول 🎯</button>
                 </div>`;
             });
-            list.innerHTML = html || '<div style="color:#555; margin-top:20px;">جاري رصد الانفجارات اللحظية...</div>';
+            list.innerHTML = html;
         } catch (e) {}
-    }
-
-    async function checkAuth() {
-        const key = localStorage.getItem('sz_ultimate_v1_key');
-        if (key) {
-            try {
-                const doc = await db.collection("users").doc(key).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    const fingerprint = getDeviceFingerprint();
-                    
-                    // التحقق من بصمة الجهاز Hardware Lock
-                    if (data.deviceId && data.deviceId !== fingerprint) {
-                        localStorage.removeItem('sz_ultimate_v1_key');
-                        const err = document.getElementById('error-msg');
-                        err.innerText = "❌ هذا الرمز مرتبط بجهاز آخر! (ID mismatch)";
-                        err.style.display = "block";
-                        return;
-                    }
-                    
-                    userTier = data.tier || data.rank || 'silver'; 
-                    showSearch();
-                }
-            } catch (e) {}
-        }
-    }
-
-    async function activate() { 
-        const k = document.getElementById('pass-key').value;
-        if(!k) return;
-        const errorMsg = document.getElementById('error-msg');
-        errorMsg.style.display = 'none';
-
-        try {
-            const userRef = db.collection("users").doc(k);
-            const doc = await userRef.get();
-            if (doc.exists) { 
-                const data = doc.data();
-                const fingerprint = getDeviceFingerprint();
-
-                // التحقق من بصمة الجهاز المسجلة مسبقاً
-                if (data.deviceId && data.deviceId !== fingerprint) {
-                    errorMsg.innerText = "❌ الرمز مفعل على جهاز آخر!";
-                    errorMsg.style.display = 'block';
-                    return;
-                }
-
-                // تسجيل البصمة إذا كان الحقل فارغاً (أول دخول)
-                if (!data.deviceId) {
-                    await userRef.set({ deviceId: fingerprint }, { merge: true });
-                }
-
-                userTier = data.tier || data.rank || 'silver';
-                localStorage.setItem('sz_ultimate_v1_key', k);
-                showSearch(); 
-            } else {
-                errorMsg.innerText = "❌ الرمز غير موجود أو غير صحيح!";
-                errorMsg.style.display = 'block';
-            }
-        } catch (e) {
-            errorMsg.innerText = "❌ فشل الاتصال بقاعدة البيانات!";
-            errorMsg.style.display = 'block';
-        }
     }
 
     async function showSearch() {
