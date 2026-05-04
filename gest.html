@@ -248,7 +248,7 @@
     let marketFlowDelta = 0; 
     let makerBuyScore = 0;
     let makerSellScore = 0;
-    const CONFIRMATION_STRENGTH = 2; // تثبيت الإشارة بعد رصدين للميكر
+    const CONFIRMATION_STRENGTH = 2; 
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
@@ -595,10 +595,14 @@
             const gap = ((currentPrice - topBid.p) / currentPrice) * 100;
             const now = Date.now();
 
-            // --- نظام كشف الأوامر الوهمية وتثبيت الإشارة (Anti-Spoofing Injection) ---
+            // --- نظام كشف الأوامر الوهمية وتثبيت الإشارة مع منطق التحول المرن ---
+
+            // شرط التحول السريع: إذا كنا في بيع والسعر صعد 2% مع سيولة ماركت
+            if (lockedSignalState === "STRONG_SELL" && buyP > 55 && wallStabilityCounter < 2) {
+                 lockedSignalState = "NEUTRAL"; // تصفير الحالة للتحول
+            }
 
             if (makerSellScore >= CONFIRMATION_STRENGTH || gap > 5.5) {
-                // رصد تفريغ ميكر حقيقي أو اختفاء الجدران (فجوة كبيرة)
                 if (lockedSignalState !== "STRONG_SELL") {
                     lockedSignalState = "STRONG_SELL";
                     playSniperWhistle(true);
@@ -611,13 +615,12 @@
                     sig.className = "sig-bearish";
                     lastSignalTime = now;
                 }
-            } else if (makerBuyScore >= CONFIRMATION_STRENGTH && buyP > 55) {
-                // رصد تجميع ميكر حقيقي مدعوم بسيولة ثابتة
+            } else if (makerBuyScore >= CONFIRMATION_STRENGTH || (buyP > 60 && gap < 1.5)) {
                 if (lockedSignalState !== "STRONG_BUY") {
                     lockedSignalState = "STRONG_BUY";
                     playSniperWhistle(false);
                     document.body.classList.remove('danger-blink');
-                    aiDec.innerText = "🚀 REAL MAKER BUY: LONG";
+                    aiDec.innerText = "🚀 TREND FLIP: BUY NOW";
                     aiDec.style.color = "var(--green)";
                     aiTar.innerText = "$" + topAsk.p.toLocaleString();
                     aiC.innerText = "96%";
@@ -626,7 +629,6 @@
                     lastSignalTime = now;
                 }
             } else if (makerBuyScore === 0 && makerSellScore === 0) {
-                // حالة التوازن وعدم وجود خداع مؤكد
                 if (lockedSignalState !== "NEUTRAL") {
                     lockedSignalState = "NEUTRAL";
                     document.body.classList.remove('danger-blink');
@@ -667,7 +669,6 @@
             let found = [];
             const sensitivity = parseInt(document.getElementById('ice-sensitivity').value);
 
-            // تتبع سيولة الميكر وتجميع نقاط التأكيد
             if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
                 let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]), amt = d * bids[0][0];
                 if (amt > sensitivity) {
@@ -685,7 +686,6 @@
                 }
             }
             
-            // نظام تبريد النقاط لإعادة الإشارة للوضع الطبيعي في حال سكون السيولة
             setTimeout(() => {
                 if (found.length === 0) {
                     if (makerBuyScore > 0) makerBuyScore--;
