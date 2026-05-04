@@ -627,14 +627,21 @@
             const supportShield = document.getElementById('support-shield-text');
             const immSupport = bids.slice(0, 15).reduce((s,b)=>s+b.v, 0);
             const immResistance = asks.slice(0, 15).reduce((s,a)=>s+a.v, 0);
-            if (topBid.p === lastTopBidPrice && lastTopBidPrice !== 0) { wallStabilityCounter++; } else { wallStabilityCounter = 0; }
-            if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
+            
+            // --- حقن مطاردة الجدران ---
+            if (topBid.p > lastSupportWall && lastSupportWall !== 0 && currentPrice > topBid.p) {
+                aiDec.innerText = "🔥 WALL CHASING: BULLISH RALLY";
+                aiDec.style.color = "var(--green)";
+                supportShield.innerText = "🛡️ SUPPORT SHIELD: CHASING UP 🚀";
+                supportShield.style.color = "var(--alpha)";
+            } else if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
                 supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀";
                 supportShield.style.color = "var(--green)";
             } else {
                 supportShield.innerText = "⚠️ SUPPORT SHIELD: FRAGILE";
                 supportShield.style.color = "var(--gold)";
             }
+            
             lastSupportWall = topBid.p;
             const now = Date.now();
             
@@ -658,17 +665,17 @@
                     aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + formatPrice(topBid.p); aiC.innerText = "99%";
                     lastSignalTime = now;
                 }
-            } else {
+            } else if (aiDec.innerText !== "🔥 WALL CHASING: BULLISH RALLY") {
                 sigBuffer.buy = 0; sigBuffer.sell = 0;
                 document.body.classList.remove('danger-blink');
                 aiDec.innerText = "🟡 MONITORING FLOW"; aiDec.style.color = "var(--gold)"; aiTar.innerText = "N/A"; aiC.innerText = "--%";
             }
             lastBidsTotal = immSupport;
+            if (topBid.p === lastTopBidPrice && lastTopBidPrice !== 0) { wallStabilityCounter++; } else { wallStabilityCounter = 0; }
             lastTopBidPrice = topBid.p;
         } catch (e) {}
     }
 
-    // دالة الرسم المحقونة جراحياً للعملات الصفرية
     function drawWallLine(wall, type) {
         const line = document.getElementById(type + '-wall-line');
         const volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
