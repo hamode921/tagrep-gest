@@ -198,7 +198,7 @@
                 </div>
                 <div class="whale-col" style="border-left:1px solid #222; border-right:1px solid #222;">
                     <div class="whale-label">NET RATIO</div>
-                    <div class="whale-val" style="color:var(--gold); font-size:11px;">FUTURES</div>
+                    <div class="whale-val" id="market-status" style="color:var(--gold); font-size:11px;">FUTURES</div>
                     <div id="net-perc" class="whale-sub" style="color:var(--gold)">0.0%</div>
                 </div>
                 <div class="whale-col">
@@ -234,7 +234,7 @@
     const db = firebase.firestore();
     
     let userTier = 'silver'; 
-    let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, currentPrice = 0, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt, scanInt, huntInt, pdInt, alphaInt;
+    let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, currentPrice = 0, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt, scanInt, huntInt, pdInt, alphaInt, marketInt;
     let sigBuffer = { buy: 0, sell: 0 }, lastSupportWall = 0, lastBidsTotal = 0, spoofCounter = 0;
     let wallStabilityCounter = 0; 
     let lastTopBidPrice = 0; 
@@ -481,14 +481,20 @@
             }).map(c => {
                 const currentVol = parseFloat(c.quoteVolume);
                 const prevVol = lastVolMap.get(c.symbol) || currentVol;
-                const volSpeed = ((currentVol - prevVol) / prevVol) * 100;
+                
+                // --- الحقن الجراحي هنا لرفع الدقة ---
+                const volSpeed = currentVol - prevVol;
                 lastVolMap.set(c.symbol, currentVol);
+                
                 return { ...c, volSpeed: volSpeed, isPump: parseFloat(c.priceChangePercent) > 0 };
             }).sort((a,b) => b.volSpeed - a.volSpeed).slice(0, 12);
+            
             let html = '';
             candidates.forEach(c => {
-                const speedTag = c.volSpeed > 1 ? `<span class="hunt-tag" style="background:var(--gold); color:#000">سيولة حية 🔥</span>` : '';
-                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPump ? 'var(--green)' : 'var(--red)'}">
+                const isExplosive = c.volSpeed > (parseFloat(c.quoteVolume) * 0.001);
+                const speedTag = isExplosive ? `<span class="hunt-tag" style="background:var(--red); color:#fff">🚨 INFUSION</span>` : '';
+                
+                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPump ? 'var(--green)' : 'var(--red)'}; ${isExplosive ? 'box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.4);' : ''}">
                     <div style="text-align:right">
                         <div style="color:var(--gold); font-weight:bold; font-size:16px;">
                             ${c.isPump ? '🚀 ' : '📉 '}${c.symbol} ${speedTag}
@@ -496,7 +502,7 @@
                         <div style="color:${c.isPump ? 'var(--green)' : 'var(--red)'}; font-size:11px;">
                             ${c.isPump ? 'لحظة انفجار: ' : 'لحظة انهيار: '} ${c.priceChangePercent}%
                         </div>
-                        <div style="color:#666; font-size:9px;">فوليوم لحظي: $${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M</div>
+                        <div style="color:#666; font-size:9px;">تسارع السيولة: $${(c.volSpeed/1000).toFixed(1)}K /sec</div>
                     </div>
                     <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPump ? 'var(--green)' : 'var(--red)'}; color:#000; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">دخول 🎯</button>
                 </div>`;
@@ -549,11 +555,13 @@
         pInt = setInterval(updatePrice, 1000); 
         lInt = setInterval(updateLiquidity, 3000);
         iInt = setInterval(updateIceberg, 1000);
+        // --- حقن مراقب الماركت ---
+        marketInt = setInterval(trackMarketOrders, 2000);
         tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
     }
 
     function goBack() { stopIntervals(); switchTab('search'); }
-    function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); timeLeft = 30; }
+    function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); if(window.marketInt) clearInterval(marketInt); timeLeft = 30; }
     
     async function updatePrice() { 
         try { 
@@ -563,6 +571,23 @@
             currentPrice = parseFloat(data.price); 
             document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2}); 
         } catch (e) {} 
+    }
+
+    // --- وظيفة حقن: صيد الماركت ---
+    async function trackMarketOrders() {
+        try {
+            const r = await fetch(`https://api.binance.com/api/v3/trades?symbol=${currentSymbol}&limit=50`);
+            const trades = await r.json();
+            let buyV = 0, sellV = 0;
+            trades.forEach(t => { const v = parseFloat(t.qty) * parseFloat(t.price); if(t.isBuyerMaker) sellV += v; else buyV += v; });
+            const delta = buyV - sellV;
+            const statusEl = document.getElementById('market-status');
+            if (Math.abs(delta) > 50000) {
+                statusEl.innerText = delta > 0 ? "🚀 شحن ماركت ضخم" : "💀 تفريغ ماركت مرعب";
+                statusEl.style.color = delta > 0 ? "var(--green)" : "var(--red)";
+                if (Math.abs(delta) > 150000) playSniperWhistle(delta < 0);
+            } else { statusEl.innerText = "FUTURES FLOW"; statusEl.style.color = "var(--gold)"; }
+        } catch(e){}
     }
 
     async function updateLiquidity() {
@@ -605,14 +630,16 @@
             }
             lastSupportWall = topBid.p;
             const now = Date.now();
-            if (buyP > 65 && immSupport > immResistance && wallStabilityCounter >= 4) {
+            
+            // --- حقن رفع الدقة هنا ---
+            if (buyP > 65 && immSupport > immResistance && wallStabilityCounter >= 3) {
                 if (now - lastSignalTime > 5000) { 
                     sigBuffer.buy++; sigBuffer.sell = 0;
                     document.body.classList.remove('danger-blink');
-                    if (sigBuffer.buy >= 3) {
+                    if (sigBuffer.buy >= 2) {
                         playSniperWhistle(false);
-                        aiDec.innerText = "🚀 SNIPE BUY: TARGET REACHED";
-                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + topAsk.p.toLocaleString(); aiC.innerText = "94%";
+                        aiDec.innerText = "🚀 GOLDEN ENTRY DETECTED";
+                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + topAsk.p.toLocaleString(); aiC.innerText = "96%";
                         lastSignalTime = now;
                     }
                 }
