@@ -527,11 +527,16 @@
             const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
             const data = await res.json();
             const list = document.getElementById('bottom-sniper-list');
+            const stableCoins = ['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT', 'USD1USDT', 'RLUSDUSDT', 'AEURUSDT', 'EURUSDT', 'GBPUSDT'];
+            
             let candidates = data.filter(c => {
                 const vol = parseFloat(c.quoteVolume);
                 const chg = parseFloat(c.priceChangePercent);
                 const price = parseFloat(c.lastPrice);
-                return c.symbol.endsWith('USDT') && vol > 3000000 && Math.abs(chg) < 4 && price < 100;
+                const symbol = c.symbol;
+                const isStable = stableCoins.includes(symbol) || (symbol.includes('USD') && !symbol.endsWith('USDT'));
+                
+                return symbol.endsWith('USDT') && !isStable && vol > 3000000 && Math.abs(chg) < 4 && price < 100;
             }).map(c => {
                 const low = parseFloat(c.lowPrice);
                 const curr = parseFloat(c.lastPrice);
