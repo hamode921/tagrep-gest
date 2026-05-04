@@ -63,7 +63,11 @@
         .hunt-tag { background: rgba(34, 197, 94, 0.1); color: var(--green); border: 1px solid var(--green); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
         .dump-tag { background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid var(--red); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
         .alpha-tag { background: rgba(251, 191, 36, 0.1); color: var(--alpha); border: 1px solid var(--alpha); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
-        .explosion-tag { background: linear-gradient(90deg, #ff007a, #00d2ff); color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; animation: pulse-glow 1.5s infinite; }
+        
+        /* ألوان محسنة لحقل الـ BOTTOM متناسقة مع البوت */
+        .bottom-alpha-tag { background: rgba(168, 85, 247, 0.1); color: var(--ghost); border: 1px solid var(--ghost); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; animation: pulse-glow 1.5s infinite; }
+        .bottom-vol-tag { background: rgba(251, 191, 36, 0.1); color: var(--gold); border: 1px solid var(--gold); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
+        
         @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .whale-alert { border-color: var(--gold) !important; box-shadow: 0 0 15px rgba(251, 191, 36, 0.2); }
         .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 100; }
@@ -263,6 +267,9 @@
     let lockedScannerCoins = new Map();
     let lastSignalTime = 0;
     
+    // متغير لحفظ آخر قسم تم استخدامه لضمان الرجوع الصحيح
+    let lastActiveTab = 'search';
+
     let lockedSignalState = "NEUTRAL"; 
     let marketFlowDelta = 0; 
     let makerBuyScore = 0;
@@ -347,10 +354,15 @@
             if (userTier === 'gold' && (tab === 'alpha' || tab === 'whale-hunt' || tab === 'pump-dump' || tab === 'bottom-sniper')) locked = true;
             if (locked) { showAlert(); return; }
         }
+        
+        // تحديث آخر قسم نشط قبل التبديل لضمان الرجوع الصحيح
+        if (tab !== 'radar') { lastActiveTab = tab; }
+
         const screens = ['auth-screen', 'alpha-screen', 'search-screen', 'scanner-screen', 'whale-hunt-screen', 'pump-dump-screen', 'bottom-sniper-screen', 'radar-ui'];
         screens.forEach(s => { if(document.getElementById(s)) document.getElementById(s).style.display = 'none'; });
         const target = (tab === 'radar') ? 'radar-ui' : tab + '-screen';
         if(document.getElementById(target)) document.getElementById(target).style.display = 'block';
+        
         clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); clearInterval(botSniperInt);
         if(tab === 'alpha') { updateAlpha(); alphaInt = setInterval(updateAlpha, 5000); }
         if(tab === 'scanner') { updateScanner(); scanInt = setInterval(updateScanner, 5000); }
@@ -550,14 +562,15 @@
 
             let html = '';
             candidates.forEach(c => {
-                const typeTag = c.isPotentialMeme ? '<span class="explosion-tag" style="background:#ff007a; color:#fff">MEME/ALPHA ALERT 🧨</span>' : '<span class="explosion-tag">VOL ACCUMULATION 🚀</span>';
-                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPotentialMeme ? '#ff007a' : '#00d2ff'}; background: rgba(0, 210, 255, 0.03)">
+                // تم تحديث الألوان لتناسب هوية البوت (بنفسجي للألفا وذهبي للتجميع)
+                const typeTag = c.isPotentialMeme ? '<span class="bottom-alpha-tag">MEME/ALPHA SNIPER 🪐</span>' : '<span class="bottom-vol-tag">ACCUMULATION 🛰️</span>';
+                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPotentialMeme ? 'var(--ghost)' : 'var(--gold)'}; background: rgba(168, 85, 247, 0.03)">
                     <div style="text-align:right">
                         <div style="color:#fff; font-weight:bold; font-size:15px;">${c.symbol} ${typeTag}</div>
                         <div style="color:var(--green); font-size:11px; font-weight:bold;">بعد عن القاع: ${c.distFromBottom.toFixed(2)}%</div>
                         <div style="color:#888; font-size:10px;">سيولة الحيتان: $${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M | السعر: ${parseFloat(c.lastPrice).toFixed(8).replace(/\.?0+$/, '')}</div>
                     </div>
-                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPotentialMeme ? '#ff007a' : '#00d2ff'}; color:#000; border:none; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold;">تحليل السيولة 🎯</button>
+                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPotentialMeme ? 'var(--ghost)' : 'var(--gold)'}; color:#000; border:none; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold;">تحليل السيولة 🎯</button>
                 </div>`;
             });
             list.innerHTML = html || '<div style="color:#555; margin-top:20px;">جاري فحص جميع العملات الصفرية والالفا...</div>';
@@ -623,7 +636,9 @@
         if(aiTar) aiTar.innerText = "--";
         if(sigBox) { sigBox.innerText = "WAITING..."; sigBox.className = ""; }
         makerBuyScore = 0; makerSellScore = 0; sigBuffer = { buy: 0, sell: 0 };
-        switchTab('search'); 
+        
+        // العودة إلى آخر قسم نشط (سواء كان BOTTOM أو SEARCH) بدلاً من الصفحة الرئيسية دائماً
+        switchTab(lastActiveTab); 
     }
 
     function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); clearInterval(botSniperInt); timeLeft = 30; }
