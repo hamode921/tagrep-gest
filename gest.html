@@ -13,7 +13,7 @@
         .inline-btn { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; vertical-align: middle; margin: 0 5px; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; transition: background 0.3s; }
         
-        .danger-blink { animation: red-flash 0.6s infinite; }
+        .danger-blink { animation: red-flash 0.6s infinite !important; background: #450a0a !important; }
         @keyframes red-flash { 0% { box-shadow: inset 0 0 50px #450a0a; } 50% { box-shadow: inset 0 0 100px #ef4444; } 100% { box-shadow: inset 0 0 50px #450a0a; } }
 
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
@@ -51,7 +51,7 @@
         .ai-signal-box { background: linear-gradient(45deg, #080808, #111); border: 1px double var(--gold); border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center; }
         #ai-decision { font-size: 18px; font-weight: 900; margin: 5px 0; }
         .ai-meta { display: flex; justify-content: space-around; font-size: 10px; color: #888; margin-top: 5px; }
-        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; }
+        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; transition: 0.3s; }
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
         
@@ -591,9 +591,8 @@
             document.getElementById('net-perc').innerText = buyP.toFixed(1) + "%";
             let buyBalls = Math.round(buyP / 10), sellBalls = 10 - buyBalls;
             document.getElementById('power-bar').innerHTML = '<div class="ball" style="background:var(--green)"></div>'.repeat(buyBalls) + '<div class="ball" style="background:var(--red)"></div>'.repeat(sellBalls);
+            
             const sig = document.getElementById('sig-box');
-            sig.innerText = buyP > 55 ? "🟢 SIGNAL: BULLISH" : (buyP < 45 ? "🔴 SIGNAL: BEARISH" : "🟡 SIGNAL: NEUTRAL");
-            sig.className = buyP > 55 ? "sig-bullish" : (buyP < 45 ? "sig-bearish" : "");
             let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
             drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
             const formatPrice = (p) => p < 0.1 ? p.toFixed(8) : p.toLocaleString();
@@ -604,22 +603,36 @@
             const supportShield = document.getElementById('support-shield-text');
             const gap = ((currentPrice - topBid.p) / currentPrice) * 100;
 
-            if (iceSellAlert) {
-                aiDec.innerText = "🚨 RISK: SELL ABSORPTION"; aiDec.style.color = "var(--red)";
-                aiTar.innerText = "EXIT NOW"; aiC.innerText = "99%"; document.body.classList.add('danger-blink');
-            } else if (gap > 5 && currentPrice > topBid.p) {
-                aiDec.innerText = "⚠️ GAP RISK: HIGH REVERSAL"; aiDec.style.color = "var(--gold)";
-                aiTar.innerText = "$" + formatPrice(topBid.p); aiC.innerText = "60%"; document.body.classList.remove('danger-blink');
+            // --- منطق الإشارة الثابتة (التعديل المطلوب) ---
+            if (iceSellAlert || (gap > 5 && currentPrice > topBid.p)) {
+                // إذا كان هناك خطر تصريف مخفي أو فجوة كبيرة، نثبت الإشارة على البيع
+                aiDec.innerText = iceSellAlert ? "🚨 RISK: SELL ABSORPTION" : "⚠️ GAP RISK: HIGH REVERSAL";
+                aiDec.style.color = "var(--red)";
+                aiTar.innerText = iceSellAlert ? "EXIT NOW" : "$" + formatPrice(topBid.p);
+                aiC.innerText = iceSellAlert ? "99%" : "60%";
+                document.body.classList.add('danger-blink');
+                
+                sig.innerText = "🔴 SIGNAL: STRONG SELL";
+                sig.className = "sig-bearish";
             } else if (topBid.p > lastSupportWall && lastSupportWall !== 0 && currentPrice > topBid.p) {
-                aiDec.innerText = "🔥 WALL CHASING: BULLISH RALLY"; aiDec.style.color = "var(--green)";
-                supportShield.innerText = "🛡️ SUPPORT SHIELD: CHASING UP 🚀"; supportShield.style.color = "var(--alpha)";
-                aiTar.innerText = "$" + formatPrice(topAsk.p); aiC.innerText = "94%"; document.body.classList.remove('danger-blink');
-            } else if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
-                supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀"; supportShield.style.color = "var(--green)";
-                if(aiDec.innerText !== "🚀 GOLDEN ENTRY DETECTED") {
-                    aiDec.innerText = "🟡 MONITORING FLOW"; aiTar.innerText = "$" + formatPrice(topAsk.p);
-                }
+                // إذا كان هناك شراء قوي وتتبع للجدران للأعلى، نتحول للشراء
+                aiDec.innerText = "🔥 WALL CHASING: BULLISH RALLY";
+                aiDec.style.color = "var(--green)";
+                supportShield.innerText = "🛡️ SUPPORT SHIELD: CHASING UP 🚀";
+                supportShield.style.color = "var(--alpha)";
+                aiTar.innerText = "$" + formatPrice(topAsk.p);
+                aiC.innerText = "94%";
                 document.body.classList.remove('danger-blink');
+                
+                sig.innerText = "🟢 SIGNAL: STRONG BUY";
+                sig.className = "sig-bullish";
+            } else {
+                // الوضع الافتراضي بناءً على نسبة السيولة
+                document.body.classList.remove('danger-blink');
+                sig.innerText = buyP > 55 ? "🟢 SIGNAL: BULLISH" : (buyP < 45 ? "🔴 SIGNAL: BEARISH" : "🟡 SIGNAL: NEUTRAL");
+                sig.className = buyP > 55 ? "sig-bullish" : (buyP < 45 ? "sig-bearish" : "");
+                aiDec.innerText = "🟡 MONITORING FLOW";
+                aiDec.style.color = "var(--gold)";
             }
             
             lastSupportWall = topBid.p;
