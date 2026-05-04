@@ -243,7 +243,6 @@
     let lockedScannerCoins = new Map();
     let lastSignalTime = 0;
     
-    // --- متغيرات تثبيت الإشارة الذكية ---
     let lockedSignalState = "NEUTRAL"; 
     let marketFlowDelta = 0; 
     let makerBuyScore = 0;
@@ -550,7 +549,20 @@
         tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
     }
 
-    function goBack() { stopIntervals(); switchTab('search'); }
+    function goBack() { 
+        stopIntervals(); 
+        document.body.classList.remove('danger-blink'); 
+        lockedSignalState = "NEUTRAL"; 
+        const aiDec = document.getElementById('ai-decision');
+        const aiTar = document.getElementById('ai-target');
+        const sigBox = document.getElementById('sig-box');
+        if(aiDec) aiDec.innerText = "Analyzing...";
+        if(aiTar) aiTar.innerText = "--";
+        if(sigBox) { sigBox.innerText = "WAITING..."; sigBox.className = ""; }
+        makerBuyScore = 0; makerSellScore = 0; sigBuffer = { buy: 0, sell: 0 };
+        switchTab('search'); 
+    }
+
     function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); timeLeft = 30; }
     
     async function updatePrice() { 
@@ -595,11 +607,8 @@
             const gap = ((currentPrice - topBid.p) / currentPrice) * 100;
             const now = Date.now();
 
-            // --- نظام كشف الأوامر الوهمية وتثبيت الإشارة مع منطق التحول المرن ---
-
-            // شرط التحول السريع: إذا كنا في بيع والسعر صعد 2% مع سيولة ماركت
             if (lockedSignalState === "STRONG_SELL" && buyP > 55 && wallStabilityCounter < 2) {
-                 lockedSignalState = "NEUTRAL"; // تصفير الحالة للتحول
+                 lockedSignalState = "NEUTRAL"; 
             }
 
             if (makerSellScore >= CONFIRMATION_STRENGTH || gap > 5.5) {
@@ -708,3 +717,4 @@
 </script>
 </body>
 </html>
+تعديل أخير سيزو اريده لما عمله تنطيني اكسايت وتصير حمره يضل لوميض لغاية مااخرج من لعمله مو يرمش ويختفي لما يرجع لسعر طبيعي اريده يضل منذرني لحد مااخرج انا 🤔
