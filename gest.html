@@ -13,7 +13,7 @@
         .inline-btn { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; vertical-align: middle; margin: 0 5px; }
         body { background: var(--bg); color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden; transition: background 0.3s; }
         
-        .danger-blink { animation: red-flash 0.6s infinite !important; background: #450a0a !important; }
+        .danger-blink { animation: red-flash 0.6s infinite; }
         @keyframes red-flash { 0% { box-shadow: inset 0 0 50px #450a0a; } 50% { box-shadow: inset 0 0 100px #ef4444; } 100% { box-shadow: inset 0 0 50px #450a0a; } }
 
         .lock-box { border: 2px solid var(--gold); padding: 30px; text-align: center; background: #000; margin-top: 15vh; border-radius: 15px; width: 300px; }
@@ -51,10 +51,9 @@
         .ai-signal-box { background: linear-gradient(45deg, #080808, #111); border: 1px double var(--gold); border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center; }
         #ai-decision { font-size: 18px; font-weight: 900; margin: 5px 0; }
         .ai-meta { display: flex; justify-content: space-around; font-size: 10px; color: #888; margin-top: 5px; }
-        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; transition: 0.3s; }
+        #sig-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 30px; border-radius: 5px; font-size: 16px; }
         .sig-bullish { background: #064e3b; color: #22c55e; border: 1px solid #22c55e; }
         .sig-bearish { background: #450a0a; color: #ef4444; border: 1px solid #ef4444; }
-        .sig-wait { background: #111; color: #888; border: 1px solid #333; }
         
         .nav-tabs { display: flex; gap: 5px; width: 95%; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; min-width: 80px; padding: 10px 5px; border-radius: 8px; border: 1px solid var(--gold); background: #000; color: var(--gold); font-weight: bold; cursor: pointer; font-size: 11px; }
@@ -199,7 +198,7 @@
                 </div>
                 <div class="whale-col" style="border-left:1px solid #222; border-right:1px solid #222;">
                     <div class="whale-label">NET RATIO</div>
-                    <div class="whale-val" id="market-status" style="color:var(--gold); font-size:11px;">FUTURES</div>
+                    <div class="whale-val" style="color:var(--gold); font-size:11px;">FUTURES</div>
                     <div id="net-perc" class="whale-sub" style="color:var(--gold)">0.0%</div>
                 </div>
                 <div class="whale-col">
@@ -212,7 +211,7 @@
             <div class="ai-signal-box">
                 <div id="support-shield-text" style="font-size:11px; color:var(--green); font-weight:bold; border-bottom:1px solid #222; padding-bottom:5px; margin-bottom:8px;">🛡️ SUPPORT SHIELD: ACTIVE</div>
                 <div id="ai-decision">Analyzing...</div>
-                <div class="ai-meta"><span>TARGET (CAP): <span id="ai-target">--</span></span><span>ACCURACY: <span id="ai-conf">--</span></span></div>
+                <div class="ai-meta"><span>TARGET: <span id="ai-target">--</span></span><span>ACCURACY: <span id="ai-conf">--</span></span></div>
             </div>
             <div id="b-walls" style="margin-top:20px;"></div>
             <div class="ice-card">
@@ -235,13 +234,19 @@
     const db = firebase.firestore();
     
     let userTier = 'silver'; 
-    let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, currentPrice = 0, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt, scanInt, huntInt, pdInt, alphaInt, marketInt;
-    let iceSellAlert = false, iceBuyAlert = false, lastSupportWall = 0, currentMarketDelta = 0;
+    let currentSymbol = 'BTCUSDT', currentMode = 'spot', allCoins = [], timeLeft = 30, currentPrice = 0, lastBids = [], lastAsks = [], pInt, lInt, iInt, tInt, scanInt, huntInt, pdInt, alphaInt;
+    let sigBuffer = { buy: 0, sell: 0 }, lastSupportWall = 0, lastBidsTotal = 0, spoofCounter = 0;
+    let wallStabilityCounter = 0; 
+    let lastTopBidPrice = 0; 
     let lastVolMap = new Map();
     let lockedAlphaCoins = new Map();
     let lockedScannerCoins = new Map();
-    let wallStabilityCounter = 0; 
-    let lastTopBidPrice = 0;
+    let lastSignalTime = 0;
+    
+    // --- متغيرات تثبيت الإشارة الجديدة ---
+    let currentSignalState = "NEUTRAL"; // حالة الإشارة الحالية لمنع التذبذب
+    let iceBuyScore = 0; // رصيد الشراء المخفي
+    let iceSellScore = 0; // رصيد البيع المخفي
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
@@ -271,7 +276,9 @@
         const k = document.getElementById('pass-key').value.trim();
         const errorMsg = document.getElementById('error-msg');
         if(!k) return;
+
         const fingerprint = getFingerprint();
+        
         try {
             const doc = await db.collection("users").doc(k).get();
             if (doc.exists) { 
@@ -471,15 +478,14 @@
             }).map(c => {
                 const currentVol = parseFloat(c.quoteVolume);
                 const prevVol = lastVolMap.get(c.symbol) || currentVol;
-                const volSpeed = currentVol - prevVol;
+                const volSpeed = ((currentVol - prevVol) / prevVol) * 100;
                 lastVolMap.set(c.symbol, currentVol);
                 return { ...c, volSpeed: volSpeed, isPump: parseFloat(c.priceChangePercent) > 0 };
             }).sort((a,b) => b.volSpeed - a.volSpeed).slice(0, 12);
             let html = '';
             candidates.forEach(c => {
-                const isExplosive = c.volSpeed > (parseFloat(c.quoteVolume) * 0.001);
-                const speedTag = isExplosive ? `<span class="hunt-tag" style="background:var(--red); color:#fff">🚨 INFUSION</span>` : '';
-                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPump ? 'var(--green)' : 'var(--red)'}; ${isExplosive ? 'box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.4);' : ''}">
+                const speedTag = c.volSpeed > 1 ? `<span class="hunt-tag" style="background:var(--gold); color:#000">سيولة حية 🔥</span>` : '';
+                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPump ? 'var(--green)' : 'var(--red)'}">
                     <div style="text-align:right">
                         <div style="color:var(--gold); font-weight:bold; font-size:16px;">
                             ${c.isPump ? '🚀 ' : '📉 '}${c.symbol} ${speedTag}
@@ -487,7 +493,7 @@
                         <div style="color:${c.isPump ? 'var(--green)' : 'var(--red)'}; font-size:11px;">
                             ${c.isPump ? 'لحظة انفجار: ' : 'لحظة انهيار: '} ${c.priceChangePercent}%
                         </div>
-                        <div style="color:#666; font-size:9px;">تسارع السيولة: $${(c.volSpeed/1000).toFixed(1)}K /sec</div>
+                        <div style="color:#666; font-size:9px;">فوليوم لحظي: $${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M</div>
                     </div>
                     <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPump ? 'var(--green)' : 'var(--red)'}; color:#000; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">دخول 🎯</button>
                 </div>`;
@@ -532,20 +538,20 @@
         currentMode = hasFutures ? 'futures' : 'spot';
         switchTab('radar');
         document.getElementById('iceberg-list').innerHTML = '';
-        lastBids = []; lastAsks = []; 
+        lastBids = []; lastAsks = []; sigBuffer = { buy: 0, sell: 0 };
+        iceBuyScore = 0; iceSellScore = 0; currentSignalState = "NEUTRAL";
         document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${currentMode.toUpperCase()}`;
         const chartSymbol = currentMode === 'futures' ? `BINANCE:${symbol}PERP` : `BINANCE:${symbol}`;
         document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=${chartSymbol}&interval=1&theme=dark`;
         stopIntervals(); updatePrice(); updateLiquidity();
         pInt = setInterval(updatePrice, 1000); 
-        lInt = setInterval(updateLiquidity, 2500); // زيادة سرعة التحديث
+        lInt = setInterval(updateLiquidity, 3000);
         iInt = setInterval(updateIceberg, 1000);
-        marketInt = setInterval(trackMarketOrders, 2000);
         tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
     }
 
     function goBack() { stopIntervals(); switchTab('search'); }
-    function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(marketInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); timeLeft = 30; }
+    function stopIntervals() { clearInterval(pInt); clearInterval(lInt); clearInterval(iInt); clearInterval(tInt); clearInterval(scanInt); clearInterval(huntInt); clearInterval(pdInt); clearInterval(alphaInt); timeLeft = 30; }
     
     async function updatePrice() { 
         try { 
@@ -553,23 +559,8 @@
             const res = await fetch(url); 
             const data = await res.json(); 
             currentPrice = parseFloat(data.price); 
-            document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 4}); 
+            document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2}); 
         } catch (e) {} 
-    }
-
-    async function trackMarketOrders() {
-        try {
-            const r = await fetch(`https://api.binance.com/api/v3/trades?symbol=${currentSymbol}&limit=80`);
-            const trades = await r.json();
-            let buyM = 0, sellM = 0;
-            trades.forEach(t => { const v = parseFloat(t.qty) * parseFloat(t.price); if(t.isBuyerMaker) sellM += v; else buyM += v; });
-            currentMarketDelta = buyM - sellM;
-            const statusEl = document.getElementById('market-status');
-            if (Math.abs(currentMarketDelta) > 50000) {
-                statusEl.innerText = currentMarketDelta > 0 ? "🚀 شحن ماركت ضخم" : "💀 تفريغ ماركت مرعب";
-                statusEl.style.color = currentMarketDelta > 0 ? "var(--green)" : "var(--red)";
-            } else { statusEl.innerText = "FUTURES FLOW"; statusEl.style.color = "var(--gold)"; }
-        } catch(e){}
     }
 
     async function updateLiquidity() {
@@ -581,75 +572,92 @@
             let bids = data.bids.map(b => ({p: parseFloat(b[0]), v: parseFloat(b[1])}));
             let asks = data.asks.map(a => ({p: parseFloat(a[0]), v: parseFloat(a[1])}));
             let tB = bids.reduce((s,b)=>s+(b.p*b.v),0), tS = asks.reduce((s,a)=>s+(a.p*a.v),0);
-            
-            // النسبة العامة للعرض فقط (منفصلة عن القرار)
             let buyP = (tB/(tB+tS)*100), sellP = 100 - buyP;
             document.getElementById('buy-sell-display').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${sellP.toFixed(1)}%`;
-            
             let lW = Math.max(1, Math.round((tB/1000000) * 1.5)), sW = Math.max(1, Math.round((tS/1000000) * 1.5));
-            document.getElementById('lw-count').innerText = lW; document.getElementById('sw-count-whale').innerText = sW;
+            document.getElementById('lw-count').innerText = lW;
+            document.getElementById('sw-count-whale').innerText = sW;
+            document.getElementById('lw-vol').innerText = `$${(tB/1000000).toFixed(2)}M`;
+            document.getElementById('sw-vol-whale').innerText = `$${(tS/1000000).toFixed(2)}M`;
             document.getElementById('net-perc').innerText = buyP.toFixed(1) + "%";
             let buyBalls = Math.round(buyP / 10), sellBalls = 10 - buyBalls;
             document.getElementById('power-bar').innerHTML = '<div class="ball" style="background:var(--green)"></div>'.repeat(buyBalls) + '<div class="ball" style="background:var(--red)"></div>'.repeat(sellBalls);
             
-            const aiDec = document.getElementById('ai-decision'), sig = document.getElementById('sig-box'), shield = document.getElementById('support-shield-text'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
-            
-            let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
-            let topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
+            const sig = document.getElementById('sig-box');
+            let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
             drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
             
-            const formatPrice = (p) => p < 0.1 ? p.toFixed(8) : p.toLocaleString();
-            const gap = ((currentPrice - topBid.p) / currentPrice) * 100;
-
-            // --- نظام القرار الثابت (المرتبط بالماركت والفجوة وجدران الحيتان فقط) ---
-            if (iceSellAlert || currentMarketDelta < -60000 || gap > 5.5) {
-                // حالة البيع القوية (تثبيت بدون رمش)
-                aiDec.innerText = iceSellAlert ? "🚨 RISK: SELL ABSORPTION" : (gap > 5.5 ? "⚠️ GAP RISK: HIGH REVERSAL" : "📉 MARKET DUMPING");
-                aiDec.style.color = "var(--red)";
-                aiTar.innerText = topBid.p.toFixed(4); // الكاب هو أقرب جدار دعم
-                aiC.innerText = iceSellAlert ? "99%" : "90%";
-                document.body.classList.add('danger-blink');
-                sig.innerText = "🔴 SIGNAL: STRONG SELL";
-                sig.className = "sig-bearish";
-                playSniperWhistle(true);
-            } 
-            else if (iceBuyAlert || currentMarketDelta > 60000 || (topBid.p > lastSupportWall && lastSupportWall !== 0)) {
-                // حالة الشراء القوية (تثبيت بدون رمش)
-                aiDec.innerText = "🔥 MARKET INFUSION: BULLISH";
-                aiDec.style.color = "var(--green)";
-                aiTar.innerText = topAsk.p.toFixed(4); // الكاب هو جدار البيع القادم
-                aiC.innerText = "94%";
-                document.body.classList.remove('danger-blink');
-                sig.innerText = "🟢 SIGNAL: STRONG BUY";
-                sig.className = "sig-bullish";
-            }
-            else {
-                // حالة الانتظار (تذبذب أو سيولة ضعيفة)
-                aiDec.innerText = "🟡 MONITORING FLOW";
-                aiDec.style.color = "var(--gold)";
-                aiTar.innerText = "WAITING...";
-                aiC.innerText = "--%";
-                document.body.classList.remove('danger-blink');
-                sig.innerText = "🟡 SIGNAL: WAIT";
-                sig.className = "sig-wait";
-            }
-
-            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${formatPrice(a.p)}</span></div>`).join('');
-            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${formatPrice(b.p)}</span></div>`).join('');
+            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
+            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
             
+            const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
+            const supportShield = document.getElementById('support-shield-text');
+            const now = Date.now();
+
+            // --- منطق الحقن: قرار السيولة المخفية المثبت (Maker Logic) ---
+            
+            if (iceSellScore >= 2) {
+                // حالة التصريف القوي (تم رصد أكثر من عملية أيسبرغ بيع)
+                if (currentSignalState !== "STRONG_SELL") {
+                    currentSignalState = "STRONG_SELL";
+                    playSniperWhistle(true);
+                    document.body.classList.add('danger-blink');
+                    aiDec.innerText = "💀 تصريف ميكر قوي - خروج فوراً";
+                    aiDec.style.color = "var(--red)";
+                    aiTar.innerText = "$" + topBid.p.toLocaleString();
+                    aiC.innerText = "99%";
+                    sig.innerText = "🔴 SIGNAL: STRONG SELL";
+                    sig.className = "sig-bearish";
+                    lastSignalTime = now;
+                }
+            } else if (iceBuyScore >= 2) {
+                // حالة الشراء القوي (تم رصد أكثر من عملية أيسبرغ شراء)
+                if (currentSignalState !== "STRONG_BUY") {
+                    currentSignalState = "STRONG_BUY";
+                    playSniperWhistle(false);
+                    document.body.classList.remove('danger-blink');
+                    aiDec.innerText = "🚀 شراء ميكر قوي - قنص متاح";
+                    aiDec.style.color = "var(--green)";
+                    aiTar.innerText = "$" + topAsk.p.toLocaleString();
+                    aiC.innerText = "96%";
+                    sig.innerText = "🟢 SIGNAL: STRONG BUY";
+                    sig.className = "sig-bullish";
+                    lastSignalTime = now;
+                }
+            } else if (iceBuyScore === 0 && iceSellScore === 0) {
+                // العودة للحالة الطبيعية فقط إذا تلاشت السيولة المخفية من الطرفين
+                if (currentSignalState !== "NEUTRAL") {
+                    currentSignalState = "NEUTRAL";
+                    document.body.classList.remove('danger-blink');
+                    aiDec.innerText = "🟡 MONITORING FLOW";
+                    aiDec.style.color = "var(--gold)";
+                    aiTar.innerText = "N/A";
+                    aiC.innerText = "--%";
+                    sig.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
+                    sig.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
+                }
+            }
+
+            // تحديث حالة الدرع
+            if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
+                supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀";
+                supportShield.style.color = "var(--green)";
+            } else {
+                supportShield.innerText = "⚠️ SUPPORT SHIELD: FRAGILE";
+                supportShield.style.color = "var(--gold)";
+            }
+
             lastSupportWall = topBid.p;
+            lastTopBidPrice = topBid.p;
         } catch (e) {}
     }
 
     function drawWallLine(wall, type) {
         const line = document.getElementById(type + '-wall-line'), volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
         if (!wall || !currentPrice) return;
-        let diffPercent = ((wall.p - currentPrice) / currentPrice) * 100, pos = 175 - (diffPercent * 200); 
-        if (pos > -10 && pos < 360) { 
-            line.style.display = 'block'; line.style.top = pos + 'px'; 
-            const formattedPrice = wall.p < 0.1 ? wall.p.toFixed(8) : wall.p.toLocaleString();
-            volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M (' + formattedPrice + ')'; 
-        } else { line.style.display = 'none'; }
+        let range = currentPrice * 0.005, diff = wall.p - currentPrice, pos = 175 - (diff / range) * 175;
+        if (pos > -10 && pos < 360) { line.style.display = 'block'; line.style.top = pos + 'px'; volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M'; }
+        else { line.style.display = 'none'; }
     }
 
     async function updateIceberg() {
@@ -658,26 +666,40 @@
             const res = await fetch(url);
             const data = await res.json();
             let bids = data.bids, asks = data.asks;
-            iceSellAlert = false; iceBuyAlert = false;
+            let found = [];
             const sensitivity = parseInt(document.getElementById('ice-sensitivity').value);
-            
-            if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
-                let amt = (parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1])) * asks[0][0];
-                if (amt > sensitivity) { iceSellAlert = true; addIceLog("SELL TEAM", asks[0][0]); }
-            }
+
             if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
-                let amt = (parseFloat(bids[0][1]) - parseFloat(lastBids[0][1])) * bids[0][0];
-                if (amt > sensitivity) { iceBuyAlert = true; addIceLog("BUY TEAM", bids[0][0]); }
+                let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]), amt = d * bids[0][0];
+                if (amt > sensitivity) {
+                    found.push({p: bids[0][0], m: amt, t: 'BUY TEAM'});
+                    iceBuyScore++; // زيادة رصيد الشراء
+                    iceSellScore = 0; // تصفير العكس لضمان الثبات
+                }
+            }
+            if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
+                let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]), amt = d * asks[0][0];
+                if (amt > sensitivity) {
+                    found.push({p: asks[0][0], m: amt, t: 'SELL TEAM'});
+                    iceSellScore++; // زيادة رصيد البيع
+                    iceBuyScore = 0; // تصفير العكس لضمان الثبات
+                }
+            }
+            
+            // تبريد الرصيد (Cool down) إذا توقفت السيولة المخفية لفترة
+            setTimeout(() => { if(found.length === 0) { if(iceBuyScore > 0) iceBuyScore--; if(iceSellScore > 0) iceSellScore--; } }, 15000);
+
+            if(found.length > 0) {
+                const list = document.getElementById('iceberg-list');
+                found.forEach(ice => {
+                    const row = document.createElement('div'); row.className = 'row';
+                    const mVal = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
+                    row.innerHTML = `<span style="color:${ice.t==='BUY TEAM'?'var(--green)':'var(--red)'}">${ice.t}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
+                    list.prepend(row); if (list.children.length > 5) list.removeChild(list.lastChild);
+                });
             }
             lastBids = bids; lastAsks = asks;
         } catch (e) {}
-    }
-
-    function addIceLog(t, p) {
-        const list = document.getElementById('iceberg-list');
-        const div = document.createElement('div'); div.className = 'row';
-        div.innerHTML = `<span style="color:${t==='BUY TEAM'?'var(--green)':'var(--red)'}">${t}</span><span>$${parseFloat(p).toFixed(4)}</span>`;
-        list.prepend(div); if(list.children.length > 4) list.removeChild(list.lastChild);
     }
 </script>
 </body>
