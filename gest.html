@@ -559,7 +559,7 @@
             const res = await fetch(url); 
             const data = await res.json(); 
             currentPrice = parseFloat(data.price); 
-            document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2}); 
+            document.getElementById('coin-price').innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8}); 
         } catch (e) {} 
     }
 
@@ -587,8 +587,8 @@
             let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
             drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
             
-            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
-            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toFixed(8).replace(/\.?0+$/, '')}</span></div>`).join('');
+            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toFixed(8).replace(/\.?0+$/, '')}</span></div>`).join('');
             
             const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
             const supportShield = document.getElementById('support-shield-text');
@@ -609,7 +609,7 @@
                     document.body.classList.add('danger-blink');
                     aiDec.innerText = gap > 5.5 ? "⚠️ SPOOF DETECTED: SELL" : "💀 MAKER DUMPING: SELL";
                     aiDec.style.color = "var(--red)";
-                    aiTar.innerText = "$" + topBid.p.toLocaleString();
+                    aiTar.innerText = "$" + topBid.p.toFixed(8).replace(/\.?0+$/, '');
                     aiC.innerText = "99%";
                     sig.innerText = "🔴 SIGNAL: STRONG SELL";
                     sig.className = "sig-bearish";
@@ -622,7 +622,7 @@
                     document.body.classList.remove('danger-blink');
                     aiDec.innerText = "🚀 TREND FLIP: BUY NOW";
                     aiDec.style.color = "var(--green)";
-                    aiTar.innerText = "$" + topAsk.p.toLocaleString();
+                    aiTar.innerText = "$" + topAsk.p.toFixed(8).replace(/\.?0+$/, '');
                     aiC.innerText = "96%";
                     sig.innerText = "🟢 SIGNAL: STRONG BUY";
                     sig.className = "sig-bullish";
@@ -698,7 +698,7 @@
                 found.forEach(ice => {
                     const row = document.createElement('div'); row.className = 'row';
                     const mVal = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
-                    row.innerHTML = `<span style="color:${ice.t==='BUY TEAM'?'var(--green)':'var(--red)'}">${ice.t}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
+                    row.innerHTML = `<span style="color:${ice.t==='BUY TEAM'?'var(--green)':'var(--red)'}">${ice.t}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toFixed(8).replace(/\.?0+$/, '')}</span>`;
                     list.prepend(row); if (list.children.length > 5) list.removeChild(list.lastChild);
                 });
             }
