@@ -198,7 +198,7 @@
                 </div>
                 <div class="whale-col" style="border-left:1px solid #222; border-right:1px solid #222;">
                     <div class="whale-label">NET RATIO</div>
-                    <div class="whale-val" id="market-status-display" style="color:var(--gold); font-size:11px;">FUTURES</div>
+                    <div class="whale-val" style="color:var(--gold); font-size:11px;">FUTURES</div>
                     <div id="net-perc" class="whale-sub" style="color:var(--gold)">0.0%</div>
                 </div>
                 <div class="whale-col">
@@ -242,15 +242,10 @@
     let lockedAlphaCoins = new Map();
     let lockedScannerCoins = new Map();
     let lastSignalTime = 0;
-    
-    // --- متغيرات تثبيت الإشارة الجديدة (الحقن) ---
-    let lockedSignal = "NEUTRAL";
-    let makerBuyScore = 0;
-    let makerSellScore = 0;
-    const CONFIRMATION_STRENGTH = 2; // عدد مرات رصد الميكر قبل تثبيت الإشارة
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
+    // --- دالة توليد بصمة الجهاز الفريدة ---
     function getFingerprint() {
         return btoa(navigator.userAgent + navigator.language + screen.width + screen.height);
     }
@@ -262,6 +257,7 @@
             const doc = await db.collection("users").doc(key).get();
             if (doc.exists) {
                 const data = doc.data();
+                // إذا تغير الجهاز، اطرده واطلب التفعيل مجدداً
                 if (data.deviceId && data.deviceId !== "" && data.deviceId !== fingerprint) {
                     localStorage.removeItem('sz_ultimate_v1_key');
                     location.reload();
@@ -277,19 +273,26 @@
         const k = document.getElementById('pass-key').value.trim();
         const errorMsg = document.getElementById('error-msg');
         if(!k) return;
+
         const fingerprint = getFingerprint();
+        
         try {
             const doc = await db.collection("users").doc(k).get();
             if (doc.exists) { 
                 const data = doc.data();
+
+                // التحقق إذا كان الكود مستخدماً في جهاز آخر
                 if (data.deviceId && data.deviceId !== "" && data.deviceId !== fingerprint) {
                     errorMsg.innerText = "❌ عذراً، هذا الكود مفعل على جهاز آخر مسبقاً!";
                     errorMsg.style.display = 'block';
                     return;
                 }
+
+                // ربط الجهاز فوراً إذا كان الحقل فارغاً
                 if (!data.deviceId || data.deviceId === "") {
                     await db.collection("users").doc(k).update({ deviceId: fingerprint });
                 }
+
                 userTier = data.tier || data.rank || 'silver';
                 localStorage.setItem('sz_ultimate_v1_key', k);
                 showSearch(); 
@@ -303,6 +306,7 @@
         }
     }
 
+    // بقية الدوال الرياضية والتحليلية كما هي
     function playSniperWhistle(isDanger = false) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -538,7 +542,6 @@
         switchTab('radar');
         document.getElementById('iceberg-list').innerHTML = '';
         lastBids = []; lastAsks = []; sigBuffer = { buy: 0, sell: 0 };
-        lockedSignal = "NEUTRAL"; makerBuyScore = 0; makerSellScore = 0;
         document.getElementById('current-coin-name').innerText = `[ ${symbol} ] - ${currentMode.toUpperCase()}`;
         const chartSymbol = currentMode === 'futures' ? `BINANCE:${symbol}PERP` : `BINANCE:${symbol}`;
         document.getElementById('chart-frame').src = `https://s.tradingview.com/widgetembed/?symbol=${chartSymbol}&interval=1&theme=dark`;
@@ -581,20 +584,18 @@
             document.getElementById('net-perc').innerText = buyP.toFixed(1) + "%";
             let buyBalls = Math.round(buyP / 10), sellBalls = 10 - buyBalls;
             document.getElementById('power-bar').innerHTML = '<div class="ball" style="background:var(--green)"></div>'.repeat(buyBalls) + '<div class="ball" style="background:var(--red)"></div>'.repeat(sellBalls);
-            
-            const sigBox = document.getElementById('sig-box');
+            const sig = document.getElementById('sig-box');
+            sig.innerText = buyP > 55 ? "🟢 SIGNAL: BULLISH" : (buyP < 45 ? "🔴 SIGNAL: BEARISH" : "🟡 SIGNAL: NEUTRAL");
+            sig.className = buyP > 55 ? "sig-bullish" : (buyP < 45 ? "sig-bearish" : "");
             let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
             drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
             document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
             document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
-            
             const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
             const supportShield = document.getElementById('support-shield-text');
-            const now = Date.now();
-
-            // --- نظام الحقن: تثبيت الإشارة بناءً على الميكر (Maker Fix) ---
-            
-            // تحديث حالة الدرع بناءً على جدران الدعم
+            const immSupport = bids.slice(0, 15).reduce((s,b)=>s+b.v, 0);
+            const immResistance = asks.slice(0, 15).reduce((s,a)=>s+a.v, 0);
+            if (topBid.p === lastTopBidPrice && lastTopBidPrice !== 0) { wallStabilityCounter++; } else { wallStabilityCounter = 0; }
             if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
                 supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀";
                 supportShield.style.color = "var(--green)";
@@ -602,47 +603,34 @@
                 supportShield.innerText = "⚠️ SUPPORT SHIELD: FRAGILE";
                 supportShield.style.color = "var(--gold)";
             }
-
-            // منطق التثبيت المعتمد على نقاط الميكر (Scores)
-            if (makerSellScore >= CONFIRMATION_STRENGTH) {
-                if (lockedSignal !== "STRONG_SELL") {
-                    lockedSignal = "STRONG_SELL";
+            lastSupportWall = topBid.p;
+            const now = Date.now();
+            if (buyP > 65 && immSupport > immResistance && wallStabilityCounter >= 4) {
+                if (now - lastSignalTime > 5000) { 
+                    sigBuffer.buy++; sigBuffer.sell = 0;
+                    document.body.classList.remove('danger-blink');
+                    if (sigBuffer.buy >= 3) {
+                        playSniperWhistle(false);
+                        aiDec.innerText = "🚀 SNIPE BUY: TARGET REACHED";
+                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + topAsk.p.toLocaleString(); aiC.innerText = "94%";
+                        lastSignalTime = now;
+                    }
+                }
+            } else if (sellP > 65 || (lastBidsTotal > 0 && immSupport < lastBidsTotal * 0.3)) {
+                if (now - lastSignalTime > 3000) {
+                    sigBuffer.sell++; sigBuffer.buy = 0;
                     playSniperWhistle(true);
                     document.body.classList.add('danger-blink');
-                    aiDec.innerText = "💀 تصريف ميكر قوي - خروج فوراً";
-                    aiDec.style.color = "var(--red)";
-                    aiTar.innerText = "$" + topBid.p.toLocaleString();
-                    aiC.innerText = "99%";
-                    sigBox.innerText = "🔴 SIGNAL: STRONG SELL";
-                    sigBox.className = "sig-bearish";
+                    aiDec.innerText = "🚨 RUG PULL / EXIT 💀";
+                    aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + topBid.p.toLocaleString(); aiC.innerText = "99%";
+                    lastSignalTime = now;
                 }
-            } else if (makerBuyScore >= CONFIRMATION_STRENGTH) {
-                if (lockedSignal !== "STRONG_BUY") {
-                    lockedSignal = "STRONG_BUY";
-                    playSniperWhistle(false);
-                    document.body.classList.remove('danger-blink');
-                    aiDec.innerText = "🚀 شراء ميكر قوي - فرصة قنص";
-                    aiDec.style.color = "var(--green)";
-                    aiTar.innerText = "$" + topAsk.p.toLocaleString();
-                    aiC.innerText = "96%";
-                    sigBox.innerText = "🟢 SIGNAL: STRONG BUY";
-                    sigBox.className = "sig-bullish";
-                }
-            } else if (makerBuyScore === 0 && makerSellScore === 0) {
-                // حالة المراقبة العادية (لا توجد سيولة ميكر مخفية كافية للتثبيت)
-                if (lockedSignal !== "NEUTRAL") {
-                    lockedSignal = "NEUTRAL";
-                    document.body.classList.remove('danger-blink');
-                    aiDec.innerText = "🟡 MONITORING FLOW";
-                    aiDec.style.color = "var(--gold)";
-                    aiTar.innerText = "N/A";
-                    aiC.innerText = "--%";
-                    sigBox.innerText = buyP > 50 ? "🟢 SIGNAL: BULLISH" : "🔴 SIGNAL: BEARISH";
-                    sigBox.className = buyP > 50 ? "sig-bullish" : "sig-bearish";
-                }
+            } else {
+                sigBuffer.buy = 0; sigBuffer.sell = 0;
+                document.body.classList.remove('danger-blink');
+                aiDec.innerText = "🟡 MONITORING FLOW"; aiDec.style.color = "var(--gold)"; aiTar.innerText = "N/A"; aiC.innerText = "--%";
             }
-
-            lastSupportWall = topBid.p;
+            lastBidsTotal = immSupport;
             lastTopBidPrice = topBid.p;
         } catch (e) {}
     }
@@ -663,33 +651,14 @@
             let bids = data.bids, asks = data.asks;
             let found = [];
             const sensitivity = parseInt(document.getElementById('ice-sensitivity').value);
-
-            // رصد سيولة الميكر المخفية (Iceberg) وتجميع النقاط للثبات
             if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
                 let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]), amt = d * bids[0][0];
-                if (amt > sensitivity) {
-                    found.push({p: bids[0][0], m: amt, t: 'BUY TEAM'});
-                    makerBuyScore++; // زيادة نقاط الشراء
-                    makerSellScore = 0; // تصفير نقاط البيع عند دخول شراء ميكر
-                }
+                if (amt > sensitivity) found.push({p: bids[0][0], m: amt, t: 'BUY TEAM'});
             }
             if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
                 let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]), amt = d * asks[0][0];
-                if (amt > sensitivity) {
-                    found.push({p: asks[0][0], m: amt, t: 'SELL TEAM'});
-                    makerSellScore++; // زيادة نقاط البيع
-                    makerBuyScore = 0; // تصفير نقاط الشراء عند دخول بيع ميكر
-                }
+                if (amt > sensitivity) found.push({p: asks[0][0], m: amt, t: 'SELL TEAM'});
             }
-            
-            // نظام "تبريد" النقاط (Cooling down) لإرجاع الإشارة للوضع الطبيعي إذا توقف الميكر لفترة
-            setTimeout(() => {
-                if (found.length === 0) {
-                    if (makerBuyScore > 0) makerBuyScore--;
-                    if (makerSellScore > 0) makerSellScore--;
-                }
-            }, 10000); // تبريد النقاط كل 10 ثوانٍ من الهدوء
-
             if(found.length > 0) {
                 const list = document.getElementById('iceberg-list');
                 found.forEach(ice => {
