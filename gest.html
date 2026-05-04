@@ -242,10 +242,10 @@
     let lockedAlphaCoins = new Map();
     let lockedScannerCoins = new Map();
     let lastSignalTime = 0;
+    let iceSellAlert = false; 
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
-    // --- دالة توليد بصمة الجهاز الفريدة ---
     function getFingerprint() {
         return btoa(navigator.userAgent + navigator.language + screen.width + screen.height);
     }
@@ -257,7 +257,6 @@
             const doc = await db.collection("users").doc(key).get();
             if (doc.exists) {
                 const data = doc.data();
-                // إذا تغير الجهاز، اطرده واطلب التفعيل مجدداً
                 if (data.deviceId && data.deviceId !== "" && data.deviceId !== fingerprint) {
                     localStorage.removeItem('sz_ultimate_v1_key');
                     location.reload();
@@ -273,26 +272,19 @@
         const k = document.getElementById('pass-key').value.trim();
         const errorMsg = document.getElementById('error-msg');
         if(!k) return;
-
         const fingerprint = getFingerprint();
-        
         try {
             const doc = await db.collection("users").doc(k).get();
             if (doc.exists) { 
                 const data = doc.data();
-
-                // التحقق إذا كان الكود مستخدماً في جهاز آخر
                 if (data.deviceId && data.deviceId !== "" && data.deviceId !== fingerprint) {
                     errorMsg.innerText = "❌ عذراً، هذا الكود مفعل على جهاز آخر مسبقاً!";
                     errorMsg.style.display = 'block';
                     return;
                 }
-
-                // ربط الجهاز فوراً إذا كان الحقل فارغاً
                 if (!data.deviceId || data.deviceId === "") {
                     await db.collection("users").doc(k).update({ deviceId: fingerprint });
                 }
-
                 userTier = data.tier || data.rank || 'silver';
                 localStorage.setItem('sz_ultimate_v1_key', k);
                 showSearch(); 
@@ -306,7 +298,6 @@
         }
     }
 
-    // بقية الدوال الرياضية والتحليلية كما هي
     function playSniperWhistle(isDanger = false) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -481,19 +472,14 @@
             }).map(c => {
                 const currentVol = parseFloat(c.quoteVolume);
                 const prevVol = lastVolMap.get(c.symbol) || currentVol;
-                
-                // --- الحقن الجراحي هنا لرفع الدقة ---
                 const volSpeed = currentVol - prevVol;
                 lastVolMap.set(c.symbol, currentVol);
-                
                 return { ...c, volSpeed: volSpeed, isPump: parseFloat(c.priceChangePercent) > 0 };
             }).sort((a,b) => b.volSpeed - a.volSpeed).slice(0, 12);
-            
             let html = '';
             candidates.forEach(c => {
                 const isExplosive = c.volSpeed > (parseFloat(c.quoteVolume) * 0.001);
                 const speedTag = isExplosive ? `<span class="hunt-tag" style="background:var(--red); color:#fff">🚨 INFUSION</span>` : '';
-                
                 html += `<div class="scan-item" style="border-right: 5px solid ${c.isPump ? 'var(--green)' : 'var(--red)'}; ${isExplosive ? 'box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.4);' : ''}">
                     <div style="text-align:right">
                         <div style="color:var(--gold); font-weight:bold; font-size:16px;">
@@ -555,7 +541,6 @@
         pInt = setInterval(updatePrice, 1000); 
         lInt = setInterval(updateLiquidity, 3000);
         iInt = setInterval(updateIceberg, 1000);
-        // --- حقن مراقب الماركت ---
         marketInt = setInterval(trackMarketOrders, 2000);
         tInt = setInterval(() => { timeLeft--; if(timeLeft<0) timeLeft=30; document.getElementById('timer').innerText = timeLeft; }, 1000);
     }
@@ -573,7 +558,6 @@
         } catch (e) {} 
     }
 
-    // --- وظيفة حقن: صيد الماركت ---
     async function trackMarketOrders() {
         try {
             const r = await fetch(`https://api.binance.com/api/v3/trades?symbol=${currentSymbol}&limit=50`);
@@ -602,10 +586,8 @@
             let buyP = (tB/(tB+tS)*100), sellP = 100 - buyP;
             document.getElementById('buy-sell-display').innerText = `BUY: ${buyP.toFixed(1)}% | SELL: ${sellP.toFixed(1)}%`;
             let lW = Math.max(1, Math.round((tB/1000000) * 1.5)), sW = Math.max(1, Math.round((tS/1000000) * 1.5));
-            document.getElementById('lw-count').innerText = lW;
-            document.getElementById('sw-count-whale').innerText = sW;
-            document.getElementById('lw-vol').innerText = `$${(tB/1000000).toFixed(2)}M`;
-            document.getElementById('sw-vol-whale').innerText = `$${(tS/1000000).toFixed(2)}M`;
+            document.getElementById('lw-count').innerText = lW; document.getElementById('sw-count-whale').innerText = sW;
+            document.getElementById('lw-vol').innerText = `$${(tB/1000000).toFixed(2)}M`; document.getElementById('sw-vol-whale').innerText = `$${(tS/1000000).toFixed(2)}M`;
             document.getElementById('net-perc').innerText = buyP.toFixed(1) + "%";
             let buyBalls = Math.round(buyP / 10), sellBalls = 10 - buyBalls;
             document.getElementById('power-bar').innerHTML = '<div class="ball" style="background:var(--green)"></div>'.repeat(buyBalls) + '<div class="ball" style="background:var(--red)"></div>'.repeat(sellBalls);
@@ -613,85 +595,48 @@
             sig.innerText = buyP > 55 ? "🟢 SIGNAL: BULLISH" : (buyP < 45 ? "🔴 SIGNAL: BEARISH" : "🟡 SIGNAL: NEUTRAL");
             sig.className = buyP > 55 ? "sig-bullish" : (buyP < 45 ? "sig-bearish" : "");
             let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
-            
-            // استدعاء دالة الرسم (المحقونة)
-            drawWallLine(topAsk, 'sell'); 
-            drawWallLine(topBid, 'buy');
-
+            drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
             const formatPrice = (p) => p < 0.1 ? p.toFixed(8) : p.toLocaleString();
-
             document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${formatPrice(a.p)}</span></div>`).join('');
             document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${formatPrice(b.p)}</span></div>`).join('');
             
             const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
             const supportShield = document.getElementById('support-shield-text');
-            const immSupport = bids.slice(0, 15).reduce((s,b)=>s+b.v, 0);
-            const immResistance = asks.slice(0, 15).reduce((s,a)=>s+a.v, 0);
-            
-            // --- حقن مطاردة الجدران ---
-            if (topBid.p > lastSupportWall && lastSupportWall !== 0 && currentPrice > topBid.p) {
-                aiDec.innerText = "🔥 WALL CHASING: BULLISH RALLY";
-                aiDec.style.color = "var(--green)";
-                supportShield.innerText = "🛡️ SUPPORT SHIELD: CHASING UP 🚀";
-                supportShield.style.color = "var(--alpha)";
+            const gap = ((currentPrice - topBid.p) / currentPrice) * 100;
+
+            if (iceSellAlert) {
+                aiDec.innerText = "🚨 RISK: SELL ABSORPTION"; aiDec.style.color = "var(--red)";
+                aiTar.innerText = "EXIT NOW"; aiC.innerText = "99%"; document.body.classList.add('danger-blink');
+            } else if (gap > 5 && currentPrice > topBid.p) {
+                aiDec.innerText = "⚠️ GAP RISK: HIGH REVERSAL"; aiDec.style.color = "var(--gold)";
+                aiTar.innerText = "$" + formatPrice(topBid.p); aiC.innerText = "60%"; document.body.classList.remove('danger-blink');
+            } else if (topBid.p > lastSupportWall && lastSupportWall !== 0 && currentPrice > topBid.p) {
+                aiDec.innerText = "🔥 WALL CHASING: BULLISH RALLY"; aiDec.style.color = "var(--green)";
+                supportShield.innerText = "🛡️ SUPPORT SHIELD: CHASING UP 🚀"; supportShield.style.color = "var(--alpha)";
+                aiTar.innerText = "$" + formatPrice(topAsk.p); aiC.innerText = "94%"; document.body.classList.remove('danger-blink');
             } else if (topBid.p >= lastSupportWall && lastSupportWall !== 0) {
-                supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀";
-                supportShield.style.color = "var(--green)";
-            } else {
-                supportShield.innerText = "⚠️ SUPPORT SHIELD: FRAGILE";
-                supportShield.style.color = "var(--gold)";
+                supportShield.innerText = "🛡️ SUPPORT SHIELD: ACTIVE 🚀"; supportShield.style.color = "var(--green)";
+                if(aiDec.innerText !== "🚀 GOLDEN ENTRY DETECTED") {
+                    aiDec.innerText = "🟡 MONITORING FLOW"; aiTar.innerText = "$" + formatPrice(topAsk.p);
+                }
+                document.body.classList.remove('danger-blink');
             }
             
             lastSupportWall = topBid.p;
-            const now = Date.now();
-            
-            if (buyP > 65 && immSupport > immResistance && wallStabilityCounter >= 3) {
-                if (now - lastSignalTime > 5000) { 
-                    sigBuffer.buy++; sigBuffer.sell = 0;
-                    document.body.classList.remove('danger-blink');
-                    if (sigBuffer.buy >= 2) {
-                        playSniperWhistle(false);
-                        aiDec.innerText = "🚀 GOLDEN ENTRY DETECTED";
-                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + formatPrice(topAsk.p); aiC.innerText = "96%";
-                        lastSignalTime = now;
-                    }
-                }
-            } else if (sellP > 65 || (lastBidsTotal > 0 && immSupport < lastBidsTotal * 0.3)) {
-                if (now - lastSignalTime > 3000) {
-                    sigBuffer.sell++; sigBuffer.buy = 0;
-                    playSniperWhistle(true);
-                    document.body.classList.add('danger-blink');
-                    aiDec.innerText = "🚨 RUG PULL / EXIT 💀";
-                    aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + formatPrice(topBid.p); aiC.innerText = "99%";
-                    lastSignalTime = now;
-                }
-            } else if (aiDec.innerText !== "🔥 WALL CHASING: BULLISH RALLY") {
-                sigBuffer.buy = 0; sigBuffer.sell = 0;
-                document.body.classList.remove('danger-blink');
-                aiDec.innerText = "🟡 MONITORING FLOW"; aiDec.style.color = "var(--gold)"; aiTar.innerText = "N/A"; aiC.innerText = "--%";
-            }
-            lastBidsTotal = immSupport;
             if (topBid.p === lastTopBidPrice && lastTopBidPrice !== 0) { wallStabilityCounter++; } else { wallStabilityCounter = 0; }
             lastTopBidPrice = topBid.p;
         } catch (e) {}
     }
 
     function drawWallLine(wall, type) {
-        const line = document.getElementById(type + '-wall-line');
-        const volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
+        const line = document.getElementById(type + '-wall-line'), volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
         if (!wall || !currentPrice) return;
-
-        let diffPercent = ((wall.p - currentPrice) / currentPrice) * 100;
-        let pos = 175 - (diffPercent * 200); 
-
+        let diffPercent = ((wall.p - currentPrice) / currentPrice) * 100, pos = 175 - (diffPercent * 200); 
         if (pos > -10 && pos < 360) { 
-            line.style.display = 'block'; 
-            line.style.top = pos + 'px'; 
+            line.style.display = 'block'; line.style.top = pos + 'px'; 
             const formattedPrice = wall.p < 0.1 ? wall.p.toFixed(8) : wall.p.toLocaleString();
             volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M (' + formattedPrice + ')'; 
-        } else { 
-            line.style.display = 'none'; 
-        }
+        } else { line.style.display = 'none'; }
     }
 
     async function updateIceberg() {
@@ -702,13 +647,14 @@
             let bids = data.bids, asks = data.asks;
             let found = [];
             const sensitivity = parseInt(document.getElementById('ice-sensitivity').value);
+            iceSellAlert = false; 
             if (lastBids.length > 0 && bids[0][0] === lastBids[0][0]) {
                 let d = parseFloat(bids[0][1]) - parseFloat(lastBids[0][1]), amt = d * bids[0][0];
                 if (amt > sensitivity) found.push({p: bids[0][0], m: amt, t: 'BUY TEAM'});
             }
             if (lastAsks.length > 0 && asks[0][0] === lastAsks[0][0]) {
                 let d = parseFloat(asks[0][1]) - parseFloat(lastAsks[0][1]), amt = d * asks[0][0];
-                if (amt > sensitivity) found.push({p: asks[0][0], m: amt, t: 'SELL TEAM'});
+                if (amt > sensitivity) { found.push({p: asks[0][0], m: amt, t: 'SELL TEAM'}); iceSellAlert = true; }
             }
             if(found.length > 0) {
                 const list = document.getElementById('iceberg-list');
