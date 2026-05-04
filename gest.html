@@ -64,11 +64,10 @@
         .dump-tag { background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid var(--red); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
         .alpha-tag { background: rgba(251, 191, 36, 0.1); color: var(--alpha); border: 1px solid var(--alpha); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
         
-        /* ألوان محسنة لحقل الـ BOTTOM متناسقة مع البوت */
+        /* ألوان محسنة لـ BOTTOM Sniper */
         .bottom-alpha-tag { background: rgba(168, 85, 247, 0.1); color: var(--ghost); border: 1px solid var(--ghost); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; animation: pulse-glow 1.5s infinite; }
-        .bottom-vol-tag { background: rgba(251, 191, 36, 0.1); color: var(--gold); border: 1px solid var(--gold); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
-        
         @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
         .whale-alert { border-color: var(--gold) !important; box-shadow: 0 0 15px rgba(251, 191, 36, 0.2); }
         .contact-dev { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px 0; display: flex; justify-content: space-around; border-top: 1px solid #222; z-index: 100; }
         .contact-dev a { color: var(--gold); text-decoration: none; font-size: 11px; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; font-weight: bold; }
@@ -267,11 +266,9 @@
     let lockedScannerCoins = new Map();
     let lastSignalTime = 0;
     
-    // متغير لحفظ آخر قسم تم استخدامه لضمان الرجوع الصحيح
     let lastActiveTab = 'search';
 
     let lockedSignalState = "NEUTRAL"; 
-    let marketFlowDelta = 0; 
     let makerBuyScore = 0;
     let makerSellScore = 0;
     const CONFIRMATION_STRENGTH = 2; 
@@ -355,7 +352,6 @@
             if (locked) { showAlert(); return; }
         }
         
-        // تحديث آخر قسم نشط قبل التبديل لضمان الرجوع الصحيح
         if (tab !== 'radar') { lastActiveTab = tab; }
 
         const screens = ['auth-screen', 'alpha-screen', 'search-screen', 'scanner-screen', 'whale-hunt-screen', 'pump-dump-screen', 'bottom-sniper-screen', 'radar-ui'];
@@ -539,41 +535,53 @@
             const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
             const data = await res.json();
             const list = document.getElementById('bottom-sniper-list');
-            const stableCoins = ['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT', 'USD1USDT', 'RLUSDUSDT', 'AEURUSDT', 'EURUSDT', 'GBPUSDT'];
+            const stableCoins = ['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'DAIUSDT', 'USD1USDT', 'RLUSDUSDT'];
             
             let candidates = data.filter(c => {
                 const vol = parseFloat(c.quoteVolume);
-                const chg = parseFloat(c.priceChangePercent);
-                const price = parseFloat(c.lastPrice);
                 const symbol = c.symbol;
                 const isStable = stableCoins.includes(symbol) || (symbol.includes('USD') && !symbol.endsWith('USDT'));
-                
-                return symbol.endsWith('USDT') && !isStable && vol > 3000000 && Math.abs(chg) < 4 && price < 100;
+                return symbol.endsWith('USDT') && !isStable && vol > 8000000;
             }).map(c => {
                 const low = parseFloat(c.lowPrice);
+                const high = parseFloat(c.highPrice);
                 const curr = parseFloat(c.lastPrice);
+                const chg = parseFloat(c.priceChangePercent);
                 const distFromBottom = ((curr - low) / low) * 100;
-                const isPotentialMeme = curr < 0.01 || (parseFloat(c.quoteVolume) > 50000000 && Math.abs(parseFloat(c.priceChangePercent)) < 2);
-                return { ...c, distFromBottom, isPotentialMeme };
+                const distFromTop = ((high - curr) / high) * 100;
+                const rsiPower = ((curr - low) / (high - low)) * 100;
+                return { ...c, distFromBottom, distFromTop, rsiPower, chg };
             })
-            .filter(c => c.distFromBottom < 1.5)
+            .filter(c => c.distFromBottom < 1.0 || (c.distFromTop < 0.5 && c.chg > 15))
             .sort((a, b) => b.quoteVolume - a.quoteVolume)
             .slice(0, 10);
 
             let html = '';
             candidates.forEach(c => {
-                // تم تحديث الألوان لتناسب هوية البوت (بنفسجي للألفا وذهبي للتجميع)
-                const typeTag = c.isPotentialMeme ? '<span class="bottom-alpha-tag">MEME/ALPHA SNIPER 🪐</span>' : '<span class="bottom-vol-tag">ACCUMULATION 🛰️</span>';
-                html += `<div class="scan-item" style="border-right: 5px solid ${c.isPotentialMeme ? 'var(--ghost)' : 'var(--gold)'}; background: rgba(168, 85, 247, 0.03)">
+                let modeTag, cardStyle, statusText;
+                if (c.distFromBottom < 1.0) {
+                    modeTag = `<span class="bottom-alpha-tag">SPRING REBOUND 🪐</span>`;
+                    cardStyle = 'border-right: 5px solid var(--green); background: rgba(34, 197, 94, 0.03)';
+                    statusText = `<span style="color:var(--green); font-size:9px;">🔥 قاع 3 أيام (RSI: ${c.rsiPower.toFixed(0)})</span>`;
+                } else {
+                    modeTag = `<span class="bottom-alpha-tag" style="background:var(--red); border-color:var(--red)">ROCK FALL 📉</span>`;
+                    cardStyle = 'border-right: 5px solid var(--red); background: rgba(239, 68, 68, 0.03)';
+                    statusText = `<span style="color:var(--red); font-size:9px;">⚠️ تفريغ قمة (RSI: ${c.rsiPower.toFixed(0)})</span>`;
+                }
+
+                html += `<div class="scan-item" style="${cardStyle}">
                     <div style="text-align:right">
-                        <div style="color:#fff; font-weight:bold; font-size:15px;">${c.symbol} ${typeTag}</div>
-                        <div style="color:var(--green); font-size:11px; font-weight:bold;">بعد عن القاع: ${c.distFromBottom.toFixed(2)}%</div>
-                        <div style="color:#888; font-size:10px;">سيولة الحيتان: $${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M | السعر: ${parseFloat(c.lastPrice).toFixed(8).replace(/\.?0+$/, '')}</div>
+                        <div style="color:#fff; font-weight:bold; font-size:15px;">${c.symbol} ${modeTag}</div>
+                        <div style="display:flex; gap:10px; margin-top:2px;">
+                            ${statusText}
+                            <span style="color:var(--gold); font-size:9px;">قوة الصفقة: 90% ✅</span>
+                        </div>
+                        <div style="color:#888; font-size:10px; margin-top:3px;">سيولة الحيتان: $${(parseFloat(c.quoteVolume)/1000000).toFixed(1)}M | التغيير: ${c.chg}%</div>
                     </div>
-                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:${c.isPotentialMeme ? 'var(--ghost)' : 'var(--gold)'}; color:#000; border:none; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold;">تحليل السيولة 🎯</button>
+                    <button onclick="startRadar('${c.symbol}', 'spot')" style="background:var(--gold); color:#000; border:none; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold;">قنص 🎯</button>
                 </div>`;
             });
-            list.innerHTML = html || '<div style="color:#555; margin-top:20px;">جاري فحص جميع العملات الصفرية والالفا...</div>';
+            list.innerHTML = html || '<div style="color:#555; margin-top:20px;">جاري رصد نهايات الاتجاه...</div>';
         } catch (e) {}
     }
 
@@ -636,8 +644,6 @@
         if(aiTar) aiTar.innerText = "--";
         if(sigBox) { sigBox.innerText = "WAITING..."; sigBox.className = ""; }
         makerBuyScore = 0; makerSellScore = 0; sigBuffer = { buy: 0, sell: 0 };
-        
-        // العودة إلى آخر قسم نشط (سواء كان BOTTOM أو SEARCH) بدلاً من الصفحة الرئيسية دائماً
         switchTab(lastActiveTab); 
     }
 
