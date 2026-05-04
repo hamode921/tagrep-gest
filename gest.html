@@ -613,9 +613,16 @@
             sig.innerText = buyP > 55 ? "🟢 SIGNAL: BULLISH" : (buyP < 45 ? "🔴 SIGNAL: BEARISH" : "🟡 SIGNAL: NEUTRAL");
             sig.className = buyP > 55 ? "sig-bullish" : (buyP < 45 ? "sig-bearish" : "");
             let topAsk = asks.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0], topBid = bids.sort((a,b) => (b.v*b.p) - (a.v*a.p))[0];
-            drawWallLine(topAsk, 'sell'); drawWallLine(topBid, 'buy');
-            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${a.p.toLocaleString()}</span></div>`).join('');
-            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${b.p.toLocaleString()}</span></div>`).join('');
+            
+            // استدعاء دالة الرسم (المحقونة)
+            drawWallLine(topAsk, 'sell'); 
+            drawWallLine(topBid, 'buy');
+
+            const formatPrice = (p) => p < 0.1 ? p.toFixed(8) : p.toLocaleString();
+
+            document.getElementById('s-walls').innerHTML = `<div style="color:var(--red); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🔴 SELL WALLS:</div>` + asks.slice(0, 3).map(a => `<div class="row"><span>VOL: ${(a.v*a.p/1000000).toFixed(2)}M</span><span>$${formatPrice(a.p)}</span></div>`).join('');
+            document.getElementById('b-walls').innerHTML = `<div style="color:var(--green); font-weight:bold; border-bottom: 1px solid #333; padding-bottom:5px;">🟢 BUY WALLS:</div>` + bids.slice(0, 3).map(b => `<div class="row"><span>VOL: ${(b.v*b.p/1000000).toFixed(2)}M</span><span>$${formatPrice(b.p)}</span></div>`).join('');
+            
             const aiDec = document.getElementById('ai-decision'), aiTar = document.getElementById('ai-target'), aiC = document.getElementById('ai-conf');
             const supportShield = document.getElementById('support-shield-text');
             const immSupport = bids.slice(0, 15).reduce((s,b)=>s+b.v, 0);
@@ -631,7 +638,6 @@
             lastSupportWall = topBid.p;
             const now = Date.now();
             
-            // --- حقن رفع الدقة هنا ---
             if (buyP > 65 && immSupport > immResistance && wallStabilityCounter >= 3) {
                 if (now - lastSignalTime > 5000) { 
                     sigBuffer.buy++; sigBuffer.sell = 0;
@@ -639,7 +645,7 @@
                     if (sigBuffer.buy >= 2) {
                         playSniperWhistle(false);
                         aiDec.innerText = "🚀 GOLDEN ENTRY DETECTED";
-                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + topAsk.p.toLocaleString(); aiC.innerText = "96%";
+                        aiDec.style.color = "var(--green)"; aiTar.innerText = "$" + formatPrice(topAsk.p); aiC.innerText = "96%";
                         lastSignalTime = now;
                     }
                 }
@@ -649,7 +655,7 @@
                     playSniperWhistle(true);
                     document.body.classList.add('danger-blink');
                     aiDec.innerText = "🚨 RUG PULL / EXIT 💀";
-                    aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + topBid.p.toLocaleString(); aiC.innerText = "99%";
+                    aiDec.style.color = "var(--red)"; aiTar.innerText = "$" + formatPrice(topBid.p); aiC.innerText = "99%";
                     lastSignalTime = now;
                 }
             } else {
@@ -662,12 +668,23 @@
         } catch (e) {}
     }
 
+    // دالة الرسم المحقونة جراحياً للعملات الصفرية
     function drawWallLine(wall, type) {
-        const line = document.getElementById(type + '-wall-line'), volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
+        const line = document.getElementById(type + '-wall-line');
+        const volText = document.getElementById(type === 'sell' ? 'sw-vol' : 'bw-vol');
         if (!wall || !currentPrice) return;
-        let range = currentPrice * 0.005, diff = wall.p - currentPrice, pos = 175 - (diff / range) * 175;
-        if (pos > -10 && pos < 360) { line.style.display = 'block'; line.style.top = pos + 'px'; volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M'; }
-        else { line.style.display = 'none'; }
+
+        let diffPercent = ((wall.p - currentPrice) / currentPrice) * 100;
+        let pos = 175 - (diffPercent * 200); 
+
+        if (pos > -10 && pos < 360) { 
+            line.style.display = 'block'; 
+            line.style.top = pos + 'px'; 
+            const formattedPrice = wall.p < 0.1 ? wall.p.toFixed(8) : wall.p.toLocaleString();
+            volText.innerText = (wall.v * wall.p / 1000000).toFixed(2) + 'M (' + formattedPrice + ')'; 
+        } else { 
+            line.style.display = 'none'; 
+        }
     }
 
     async function updateIceberg() {
@@ -691,7 +708,8 @@
                 found.forEach(ice => {
                     const row = document.createElement('div'); row.className = 'row';
                     const mVal = ice.m >= 1000000 ? (ice.m/1000000).toFixed(2) + "M" : (ice.m/1000).toFixed(1) + "K";
-                    row.innerHTML = `<span style="color:${ice.t==='BUY TEAM'?'var(--green)':'var(--red)'}">${ice.t}</span><span style="color:var(--gold)">$${mVal}</span><span>$${parseFloat(ice.p).toLocaleString()}</span>`;
+                    const fP = parseFloat(ice.p) < 0.1 ? parseFloat(ice.p).toFixed(8) : parseFloat(ice.p).toLocaleString();
+                    row.innerHTML = `<span style="color:${ice.t==='BUY TEAM'?'var(--green)':'var(--red)'}">${ice.t}</span><span style="color:var(--gold)">$${mVal}</span><span>$${fP}</span>`;
                     list.prepend(row); if (list.children.length > 5) list.removeChild(list.lastChild);
                 });
             }
